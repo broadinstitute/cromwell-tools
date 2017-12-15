@@ -42,8 +42,8 @@ class TestUtils(unittest.TestCase):
         password = "fake_password"
         # Check request actions
         mock_request.post(url, json=_request_callback)
-        result = cromwell_tools.start_workflow(wdl_file, zip_file, inputs_file,
-            inputs_file2, options_file, url, user, password)
+        result = cromwell_tools.start_workflow(
+            wdl_file, inputs_file, url, options_file, inputs_file2, zip_file, user, password)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.headers.get('test'), 'header')
 
