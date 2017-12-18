@@ -68,8 +68,8 @@ class TestUtils(unittest.TestCase):
                 f1_contents = f1.read()
             with zf.open('b.txt') as f2:
                 f2_contents = f2.read()
-        self.assertEqual(f1_contents, 'aaa\n')
-        self.assertEqual(f2_contents, 'bbb\n')
+        self.assertEqual(f1_contents, b'aaa\n')
+        self.assertEqual(f2_contents, b'bbb\n')
 
 
 if __name__ == '__main__':
