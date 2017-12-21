@@ -8,11 +8,7 @@ from datetime import datetime, timedelta
 import time
 import requests
 from requests.auth import HTTPBasicAuth
-
-if sys.version_info < (3, 0):
-    from StringIO import StringIO
-else:
-    from io import StringIO
+import six
 
 
 _failed_statuses = ['Failed', 'Aborted', 'Aborting']
@@ -167,14 +163,13 @@ def make_zip_in_memory(url_to_contents):
     containing each file. For each url, the part after the last slash is used
     as the file name when writing to the zip archive.
     """
-    buf = StringIO()
+    buf = six.BytesIO()
     with zipfile.ZipFile(buf, 'w') as zip_buffer:
         for url, contents in url_to_contents.items():
             name = url.split('/')[-1]
             zip_buffer.writestr(name, contents)
 
-    bytes_buf = io.BytesIO(buf.getvalue())
-    return bytes_buf
+    return buf
 
 
 def download(url):
@@ -194,7 +189,7 @@ def download_http(url):
     Makes an http request for the contents at the given url and returns the response body.
     """
     response = requests.get(url)
-    response_str = response.text.encode('utf-8')
+    response_str = response.text
     return response_str
 
 

@@ -1,0 +1,14 @@
+language: python
+python:
+- '2.7'
+- '3.6'
+sudo: required
+services: docker
+install: pip install -r requirements.txt -r test-requirements.txt
+script: python -m unittest discover -v
+notifications:
+  slack:
+    on_success: change
+    on_failure: always
+    rooms:
+      secure: iwNFxUcHIiThEGCpHNRYbLdwfEuQ0IrMZoN4hh73LupeuF1XVISoUJwvJER6cYKphwy4IXmdalilvH9AsVNBuWtY0RPZy44gKYDjXyViQiup67uChQ5u7I4t9d9WcuTor3tFY0+f9ACmqoMl8GcRyKrUwRg1tknmDG+B5sJ9NXW/dQ1Xfk8mArgx0kYpAVFjHmGIxrBvKu57p370spe7CIFFf60iCmV4Q2ty8UkciOwjBHcYCh09JdgjKKMNIRF5aYqI2j/009AQHX0/eCYxou7H6vOflEP8pVMiGt/4SbnEs8nenwUcr9i9u0oBVs4p0GJA/qiTwy9XXPYymcePTU39huSS2r+6dkzeAwVsNK3hoxXvhhtLj8gatGuE92s2l59y5sWLfZb+lnTRMYrt2ZVnXzIlHrAV65gHUIXSD2it59o0Gl6SqChPg2H96ZTma9rBKB926nhf1Q7AvZOc7f2e0v3aSm5Ogz5wtHN2L5PVdYZgSnec8CbzW10nNZscBDqN2aSeZgxzQOU1AGp577RJ+MNtYmtPRJ8fZFgZs2r5KZas9sYJRhRBlGmJV60AnvpZ38mQaCnCzxkU75HZuaqa/wX/JissxxkZj0Gx4HNyHbssrzDIJLT6WxnoggHKSuv7NF1vheBbkC503DoPZV9+YrNOixi5bNQR3y2tMR0=
