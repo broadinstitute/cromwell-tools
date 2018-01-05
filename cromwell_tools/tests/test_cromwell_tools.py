@@ -47,6 +47,48 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.headers.get('test'), 'header')
 
+    @requests_mock.mock()
+    def test_download_http_raises_error_on_bad_status_code(self, mock_request):
+
+        def _request_callback(request, context):
+            context.status_code = 404
+            return 'Not found'
+
+        fake_url = 'https://fake_url'
+        mock_request.get(fake_url, json=_request_callback)
+
+        with self.assertRaises(requests.HTTPError):
+            cromwell_tools.download_http(fake_url)
+
+    @requests_mock.mock()
+    def test_download_http_no_error_on_200(self, mock_request):
+
+        def _request_callback(request, context):
+            context.status_code = 200
+            return 'foo'
+
+        fake_url = 'https://fake_url'
+
+        mock_request.get(fake_url, json=_request_callback)
+        try:
+            cromwell_tools.download_http(fake_url)
+        except requests.HTTPError:
+            self.fail('Raised HTTPError for status 200')
+
+    @requests_mock.mock()
+    def test_download_http_no_error_on_301(self, mock_request):
+
+        def _request_callback(request, context):
+            context.status_code = 301
+            return 'foo'
+
+        fake_url = 'https://fake_url'
+        mock_request.get(fake_url, json=_request_callback)
+        try:
+            cromwell_tools.download_http(fake_url)
+        except requests.HTTPError:
+            self.fail('Raised HTTPError for status 301')
+
     def test_download_to_map(self):
         """Test download_to_map with local files to ensure it builds the map of paths to contents correctly"""
         urls = ['data/a.txt', 'data/b.txt']
@@ -58,9 +100,14 @@ class TestUtils(unittest.TestCase):
 
     def test_make_zip_in_memory(self):
         """Test make_zip_in_memory produces an in-memory zip file with the expected contents"""
+
+        # Encoding the values below gives more realistic inputs for this test.
+        # It gives us str instances in Python 2 and bytes instances in Python 3,
+        # which is what is actually received respectively in these two versions by
+        # make_zip_in_memory.
         urls_to_content = {
-            'data/a.txt': 'aaa\n',
-            'data/b.txt': 'bbb\n'
+            'data/a.txt': 'aaa\n'.encode('utf-8'),
+            'data/b.txt': 'bbb\n'.encode('utf-8')
         }
         bytes_buf = cromwell_tools.make_zip_in_memory(urls_to_content)
         with zipfile.ZipFile(bytes_buf, 'r') as zf:

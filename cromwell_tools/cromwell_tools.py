@@ -125,14 +125,14 @@ def start_workflow(
     :return requests.Response response: HTTP response from cromwell.
     """
     files = {
-        'wdlSource': wdl_file,
+        'workflowSource': wdl_file,
         'workflowInputs': inputs_file,
     }
 
     if inputs_file2 is not None:
         files['workflowInputs_2'] = inputs_file2
     if zip_file is not None:
-        files['wdlDependencies'] = zip_file
+        files['workflowDependencies'] = zip_file
     if options_file is not None:
         files['workflowOptions'] = options_file
 
@@ -169,7 +169,12 @@ def make_zip_in_memory(url_to_contents):
             name = url.split('/')[-1]
             zip_buffer.writestr(name, contents)
 
-    return buf
+    # To properly send the zip to Cromwell in start_workflow, we need it to be an io.BytesIO.
+    # If we don't convert, start_workflow appears to succeed, but Cromwell can't find
+    # anything in the zip.
+    # (six.BytesIO is just an alias for StringIO in Python 2 and for BytesIO in Python 3.)
+    bytes_buf = io.BytesIO(buf.getvalue())
+    return bytes_buf
 
 
 def download(url):
@@ -189,7 +194,10 @@ def download_http(url):
     Makes an http request for the contents at the given url and returns the response body.
     """
     response = requests.get(url)
-    response_str = response.text
+    response.raise_for_status()
+
+    # Encoding here prevents a UnicodeDecodeError later in make_zip_in_memory in Python 2.
+    response_str = response.text.encode('utf-8')
     return response_str
 
 

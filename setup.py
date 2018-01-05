@@ -27,6 +27,7 @@ setup(
     packages=['cromwell_tools'],
     install_requires=[
         'requests',
+        'six'
     ],
     scripts=['cromwell_tools/scripts/cromwell-tools'],
     include_package_data=True
