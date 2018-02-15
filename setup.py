@@ -27,7 +27,9 @@ setup(
     packages=['cromwell_tools'],
     install_requires=[
         'requests==2.18.4',
-        'six==1.11.0'
+        'six==1.11.0',
+        'oauth2client==4.1.2',
+        'tenacity==4.10.0'
     ],
     scripts=['cromwell_tools/scripts/cromwell-tools'],
     include_package_data=True

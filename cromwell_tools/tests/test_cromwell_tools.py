@@ -48,6 +48,7 @@ class TestUtils(unittest.TestCase):
         self.url = "https://fake_url"
         self.user = "fake_user"
         self.password = "fake_password"
+        self.caas_key = "path/fake_key.json"
 
     @requests_mock.mock()
     def test_start_workflow(self, mock_request):
@@ -62,7 +63,7 @@ class TestUtils(unittest.TestCase):
         mock_request.post(self.url, json=_request_callback)
         result = cromwell_tools.start_workflow(
             self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file, self.user,
-            self.password, self.label)
+            self.password, label=self.label)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.headers.get('test'), 'header')
 
@@ -81,11 +82,65 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(requests.HTTPError):
             result = cromwell_tools.start_workflow(
                 self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
-                self.user, self.password, self.label)
+                self.user, self.password, label=self.label)
             self.assertNotEqual(mock_request.call_count, 1)
 
         # Reset default retry value
         cromwell_tools.start_workflow.retry.stop = stop_after_delay(20)
+
+    @requests_mock.mock()
+    @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
+    def test_start_workflow_in_cromwell_as_a_service(self, mock_request, mock_header):
+        mock_header.return_value = {"Authorization": "bearer fake_token"}
+        def _request_callback(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'request': {'body': "content"}}
+
+        # Check request actions
+        mock_request.post(self.url, json=_request_callback)
+        result = cromwell_tools.start_workflow(
+            self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
+            caas_key=self.caas_key, label=self.label)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.headers.get('test'), 'header')
+
+    @requests_mock.mock()
+    def test_get_workflow_statuses(self, mock_request):
+        def _request_callback(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'request': {'body': "content"}}
+
+        def _request_callback_status(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'status': 'Succeeded'}
+
+        ids = ["01234"]
+        mock_request.post(self.url, json=_request_callback)
+        mock_request.get(self.url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
+        result = cromwell_tools.get_workflow_statuses(ids, self.url, self.user, self.password)
+        self.assertIn('Succeeded', result)
+
+    @requests_mock.mock()
+    @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
+    def test_get_workflow_statuses_in_cromwell_as_a_service(self, mock_request, mock_header):
+        def _request_callback(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'request': {'body': "content"}}
+
+        def _request_callback_status(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'status': 'Succeeded'}
+
+        ids = ["01234"]
+        mock_request.post(self.url, json=_request_callback)
+        mock_request.get(self.url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
+        result = cromwell_tools.get_workflow_statuses(ids, self.url, caas_key=self.caas_key)
+        self.assertIn('Succeeded', result)
 
     @requests_mock.mock()
     def test_download_http_raises_error_on_bad_status_code(self, mock_request):

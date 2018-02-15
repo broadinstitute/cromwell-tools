@@ -1,2 +1,2 @@
-mock
-requests_mock
+mock==2.0.0
+requests_mock==1.4.0
