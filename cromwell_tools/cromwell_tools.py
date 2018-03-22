@@ -252,8 +252,13 @@ def validate_cromwell_label(label_object):
 
 
 def _label_content_checker(regex, content):
-    if not re.fullmatch(regex, content):
-        # raise ValueError('Invalid label: {0} did not match the regex {1}'.format(content, regex))
+
+    try:
+        matched = re.fullmatch(regex, content)
+    except AttributeError:
+        matched = _fullmatch(regex, content)
+
+    if not matched:
         return 'Invalid label: {0} did not match the regex {1}.\n'.format(content, regex)
     else:
         return ""
@@ -264,3 +269,8 @@ def _label_length_checker(length, content):
         return 'Invalid label: {0} has {1} characters. The maximum is {2}.\n'.format(content, len(content), length)
     else:
         return ""
+
+
+def _fullmatch(regex, string, flags=0):
+    """Backport Python 3.4's regular expression "fullmatch()" to Python 2 by emulating python-3.4 re.fullmatch()."""
+    return re.match("(?:" + regex + r")\Z", string, flags=flags)
