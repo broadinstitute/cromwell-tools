@@ -12,6 +12,7 @@ except ImportError:
 from cromwell_tools import cromwell_tools
 import zipfile
 import os
+import json
 
 
 class TestUtils(unittest.TestCase):
@@ -24,11 +25,13 @@ class TestUtils(unittest.TestCase):
         cls.invalid_labels = {"0-label-key-1": "0-label-value-1",
                             "the-maximum-allowed-character-length-for-label-pairs-is-sixty-three":
                                 "cromwell-please-dont-validate-these-labels",
-                            "": "not a great label key"}
+                            "": "not a great label key",
+                            "Comment": "This-is-a-test-label"}
         cls.valid_labels = {"label-key-1": "label-value-1",
                         "label-key-2": "label-value-2",
                         "only-key": "",
-                        "fc-id": "0123-abcd-4567-efgh"}
+                        "fc-id": "0123-abcd-4567-efgh",
+                        "comment": "this-is-a-test-label"}
 
     @requests_mock.mock()
     def test_start_workflow(self, mock_request):
@@ -39,6 +42,7 @@ class TestUtils(unittest.TestCase):
         inputs_file = io.BytesIO(b"inputs_file_content")
         inputs_file2 = io.BytesIO(b"inputs_file2_content")
         options_file = io.BytesIO(b"options_file_content")
+        label = io.BytesIO(b'{"test-label-key": "test-label-value"}')
 
         def _request_callback(request, context):
             context.status_code = 200
@@ -51,7 +55,7 @@ class TestUtils(unittest.TestCase):
         # Check request actions
         mock_request.post(url, json=_request_callback)
         result = cromwell_tools.start_workflow(
-            wdl_file, inputs_file, url, options_file, inputs_file2, zip_file, user, password)
+            wdl_file, inputs_file, url, options_file, inputs_file2, zip_file, user, password, label)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.headers.get('test'), 'header')
 
@@ -126,11 +130,26 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(f1_contents, b'aaa\n')
         self.assertEqual(f2_contents, b'bbb\n')
 
-    def test_validate_cromwell_label_on_invalid_labels(self):
-        self.assertRaises(ValueError, cromwell_tools.validate_cromwell_label, self.invalid_labels)
+    def test_validate_cromwell_label_on_invalid_labels_object(self):
+        self.assertRaises(ValueError, cromwell_tools.validate_cromwell_label,
+                          self.invalid_labels)
 
-    def test_validate_cromwell_label_on_valid_labels(self):
+    def test_validate_cromwell_label_on_invalid_labels_str_object(self):
+        self.assertRaises(ValueError, cromwell_tools.validate_cromwell_label,
+                          json.dumps(self.invalid_labels))
+
+    def test_validate_cromwell_label_on_invalid_labels_bytes_object(self):
+        self.assertRaises(ValueError, cromwell_tools.validate_cromwell_label,
+                          json.dumps(self.invalid_labels).encode('utf-8'))
+
+    def test_validate_cromwell_label_on_valid_labels_object(self):
         self.assertTrue(cromwell_tools.validate_cromwell_label(self.valid_labels))
+
+    def test_validate_cromwell_label_on_valid_labels_str_object(self):
+        self.assertTrue(cromwell_tools.validate_cromwell_label(json.dumps(self.valid_labels)))
+
+    def test_validate_cromwell_label_on_valid_labels_bytes_object(self):
+        self.assertTrue(cromwell_tools.validate_cromwell_label(json.dumps(self.valid_labels).encode('utf-8')))
 
 
 if __name__ == '__main__':

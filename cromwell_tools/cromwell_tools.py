@@ -117,6 +117,9 @@ def start_workflow(
         password=None, label=None):
     """Use HTTP POST to start workflow in Cromwell.
 
+    The requests library could accept both Bytes and String objects as parameters of files, so there is no
+        strict restrictions on the type of inputs of this function.
+
     :param _io.BytesIO wdl_file: wdl file.
     :param _io.BytesIO inputs_file: inputs file.
     :param _io.BytesIO options_file: (optional) cromwell configs file.
@@ -125,7 +128,7 @@ def start_workflow(
     :param str url: cromwell url.
     :param str user: cromwell username.
     :param str password: cromwell password.
-    :param dict label: dictionary defines a cromwell label.
+    :param _io.BytesIO label: JSON file containing a set of collection of key/value pairs for workflow labels.
 
     :return requests.Response response: HTTP response from cromwell.
     """
@@ -146,10 +149,10 @@ def start_workflow(
     else:
         auth = None
 
-    # if label:
-    #
-    response = requests.post(url, files=files, auth=auth)
+    if label and validate_cromwell_label(label):  # short-circuit the validator if label is None
+        files['labels'] = label
 
+    response = requests.post(url, files=files, auth=auth)
     return response
 
 
@@ -231,10 +234,10 @@ def validate_cromwell_label(label_object):
     """
     err_msg = ""
 
-    if isinstance(label_object, str):
+    if isinstance(label_object, str) or isinstance(label_object, bytes):
         label_object = json.loads(label_object)
-    # label_key = str(next(iter(label_object.keys())))
-    # label_value = str(next(iter(label_object.values())))
+    elif isinstance(label_object, io.BytesIO):
+        label_object = json.loads(label_object.getvalue())
 
     for label_key, label_value in label_object.items():
         err_msg += _label_content_checker(_CROMWELL_LABEL_KEY_REGEX, label_key)
@@ -249,7 +252,7 @@ def validate_cromwell_label(label_object):
 
 
 def _label_content_checker(regex, content):
-    if not re.search(regex, content):
+    if not re.fullmatch(regex, content):
         # raise ValueError('Invalid label: {0} did not match the regex {1}'.format(content, regex))
         return 'Invalid label: {0} did not match the regex {1}.\n'.format(content, regex)
     else:
