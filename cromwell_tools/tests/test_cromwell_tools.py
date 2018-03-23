@@ -12,7 +12,6 @@ except ImportError:
 from cromwell_tools import cromwell_tools
 import zipfile
 import os
-import json
 
 
 class TestUtils(unittest.TestCase):

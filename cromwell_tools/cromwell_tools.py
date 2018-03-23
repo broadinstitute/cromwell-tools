@@ -1,7 +1,6 @@
 """This module contains utility functions to interact with Cromwell.
 """
 import io
-import sys
 import zipfile
 import json
 from datetime import datetime, timedelta
@@ -9,7 +8,6 @@ import time
 import requests
 from requests.auth import HTTPBasicAuth
 import six
-import re
 
 
 _failed_statuses = ['Failed', 'Aborted', 'Aborting']
