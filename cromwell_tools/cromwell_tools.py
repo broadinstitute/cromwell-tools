@@ -13,9 +13,6 @@ import re
 
 
 _failed_statuses = ['Failed', 'Aborted', 'Aborting']
-_CROMWELL_LABEL_LENGTH = 63
-_CROMWELL_LABEL_KEY_REGEX = '[a-z]([-a-z0-9]*[a-z0-9])?'
-_CROMWELL_LABEL_VALUE_REGEX = '([a-z0-9]*[-a-z0-9]*[a-z0-9])?'
 
 
 def harmonize_credentials(secrets_file=None, cromwell_username=None, cromwell_password=None):
@@ -149,7 +146,7 @@ def start_workflow(
     else:
         auth = None
 
-    if label and validate_cromwell_label(label):  # short-circuit the validator if label is None
+    if label:
         files['labels'] = label
 
     response = requests.post(url, files=files, auth=auth)
@@ -219,58 +216,3 @@ def read_local_file(path):
     with open(path) as f:
         contents = f.read()
     return contents
-
-
-def validate_cromwell_label(label_object):
-    """Check if the label object is valid for Cromwell.
-
-    Note: this function as well as the global variables _CROMWELL_LABEL_LENGTH, _CROMWELL_LABEL_KEY_REGEX
-        and _CROMWELL_LABEL_VALUE_REGEX are implemented based on the Cromwell's documentation:
-        https://cromwell.readthedocs.io/en/develop/Labels/ and the Cromwell's code base:
-        https://github.com/broadinstitute/cromwell/blob/master/core/src/main/scala/cromwell/core/labels/Label.scala#L16
-        Both the docs and the code base of Cromwell could possibly change in the future, please update this
-        checker on demand.
-    :param label_object: A dictionary or a key-value object string that define a Cromwell label.
-    """
-    err_msg = ""
-
-    if isinstance(label_object, str) or isinstance(label_object, bytes):
-        label_object = json.loads(label_object)
-    elif isinstance(label_object, io.BytesIO):
-        label_object = json.loads(label_object.getvalue())
-
-    for label_key, label_value in label_object.items():
-        err_msg += _label_content_checker(_CROMWELL_LABEL_KEY_REGEX, label_key)
-        err_msg += _label_content_checker(_CROMWELL_LABEL_VALUE_REGEX, label_value)
-        err_msg += _label_length_checker(_CROMWELL_LABEL_LENGTH, label_key)
-        err_msg += _label_length_checker(_CROMWELL_LABEL_LENGTH, label_value)
-
-    if err_msg == "":
-        return True
-    else:
-        raise ValueError(err_msg)
-
-
-def _label_content_checker(regex, content):
-
-    try:
-        matched = re.fullmatch(regex, content)
-    except AttributeError:
-        matched = _fullmatch(regex, content)
-
-    if not matched:
-        return 'Invalid label: {0} did not match the regex {1}.\n'.format(content, regex)
-    else:
-        return ""
-
-
-def _label_length_checker(length, content):
-    if len(content) > length:
-        return 'Invalid label: {0} has {1} characters. The maximum is {2}.\n'.format(content, len(content), length)
-    else:
-        return ""
-
-
-def _fullmatch(regex, string, flags=0):
-    """Backport Python 3.4's regular expression "fullmatch()" to Python 2 by emulating python-3.4 re.fullmatch()."""
-    return re.match("(?:" + regex + r")\Z", string, flags=flags)
