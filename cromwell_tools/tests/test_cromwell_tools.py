@@ -12,6 +12,7 @@ except ImportError:
 from cromwell_tools import cromwell_tools
 import zipfile
 import os
+import json
 
 
 class TestUtils(unittest.TestCase):
@@ -21,6 +22,20 @@ class TestUtils(unittest.TestCase):
         # Change to test directory, as tests may have been invoked from another dir
         dir = os.path.abspath(os.path.dirname(__file__))
         os.chdir(dir)
+        cls.invalid_labels = {
+            "0-label-key-1": "0-label-value-1",
+            "the-maximum-allowed-character-length-for-label-pairs-is-sixty-three":
+                "cromwell-please-dont-validate-these-labels",
+            "": "not a great label key",
+            "Comment": "This-is-a-test-label"
+        }
+        cls.valid_labels = {
+            "label-key-1": "label-value-1",
+            "label-key-2": "label-value-2",
+            "only-key": "",
+            "fc-id": "0123-abcd-4567-efgh",
+            "comment": "this-is-a-test-label"
+        }
 
     @requests_mock.mock()
     def test_start_workflow(self, mock_request):
@@ -118,6 +133,27 @@ class TestUtils(unittest.TestCase):
                 f2_contents = f2.read()
         self.assertEqual(f1_contents, b'aaa\n')
         self.assertEqual(f2_contents, b'bbb\n')
+
+    def test_validate_cromwell_label_on_invalid_labels_object(self):
+        self.assertRaises(ValueError, cromwell_tools.validate_cromwell_label,
+                          self.invalid_labels)
+
+    def test_validate_cromwell_label_on_invalid_labels_str_object(self):
+        self.assertRaises(ValueError, cromwell_tools.validate_cromwell_label,
+                          json.dumps(self.invalid_labels))
+
+    def test_validate_cromwell_label_on_invalid_labels_bytes_object(self):
+        self.assertRaises(ValueError, cromwell_tools.validate_cromwell_label,
+                          json.dumps(self.invalid_labels).encode('utf-8'))
+
+    def test_validate_cromwell_label_on_valid_labels_object(self):
+        self.assertIsNone(cromwell_tools.validate_cromwell_label(self.valid_labels))
+
+    def test_validate_cromwell_label_on_valid_labels_str_object(self):
+        self.assertIsNone(cromwell_tools.validate_cromwell_label(json.dumps(self.valid_labels)))
+
+    def test_validate_cromwell_label_on_valid_labels_bytes_object(self):
+        self.assertIsNone(cromwell_tools.validate_cromwell_label(json.dumps(self.valid_labels).encode('utf-8')))
 
 
 if __name__ == '__main__':
