@@ -13,7 +13,7 @@ import re
 
 _failed_statuses = ['Failed', 'Aborted', 'Aborting']
 
-# Note: below rules for validating labels are based on Cromwell's documentation:
+# Note: the following rules for validating labels are based on Cromwell's documentation:
 # https://cromwell.readthedocs.io/en/develop/Labels/ and they could be changed in the future.
 _CROMWELL_LABEL_LENGTH = 63
 _CROMWELL_LABEL_KEY_REGEX = '[a-z]([-a-z0-9]*[a-z0-9])?'
