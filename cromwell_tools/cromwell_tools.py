@@ -22,7 +22,7 @@ _CROMWELL_LABEL_VALUE_REGEX = '([a-z0-9]*[-a-z0-9]*[a-z0-9])?'
 
 def harmonize_credentials(secrets_file=None, cromwell_username=None, cromwell_password=None):
     """
-    takes all of the valid ways of providing authentication to cromwell and returns a username
+    Takes all of the valid ways of providing authentication to cromwell and returns a username
     and password
 
     :param str cromwell_password:
@@ -46,7 +46,7 @@ def harmonize_credentials(secrets_file=None, cromwell_username=None, cromwell_pa
 
 def get_workflow_statuses(
         ids, cromwell_url, cromwell_user=None, cromwell_password=None, secrets_file=None):
-    """ given a list of workflow ids, query cromwell url for their statuses
+    """ Given a list of workflow ids, query cromwell url for their statuses
 
     :param list ids:
     :param str cromwell_url:
@@ -79,7 +79,7 @@ def wait_until_workflow_completes(
         cromwell_url, workflow_ids, timeout_minutes, poll_interval_seconds=30, cromwell_user=None,
         cromwell_password=None, secrets_file=None):
     """
-    given a list of workflow ids, wait until cromwell returns successfully for each status, or
+    Given a list of workflow ids, wait until cromwell returns successfully for each status, or
     one of the workflows fails or is aborted.
 
     :param list workflow_ids:
@@ -116,7 +116,7 @@ def wait_until_workflow_completes(
 
 def start_workflow(
         wdl_file, inputs_file, url, options_file=None, inputs_file2=None, zip_file=None, user=None,
-        password=None, label=None, validate_inputs=True):
+        password=None, label=None, validate_labels=True):
     """Use HTTP POST to start workflow in Cromwell.
 
     The requests library could accept both Bytes and String objects as parameters of files, so there is no
@@ -131,12 +131,12 @@ def start_workflow(
     :param str user: (optional) cromwell username.
     :param str password: (optional) cromwell password.
     :param _io.BytesIO label: (optional) JSON file containing a collection of key/value pairs for workflow labels.
-    :param bool validate_inputs: (optional) Whether to validate all inputs or not, using cromwell-tools' built-in
+    :param bool validate_labels: (optional) Whether to validate labels or not, using cromwell-tools' built-in
      validators. It is set to True by default.
 
     :return requests.Response response: HTTP response from cromwell.
     """
-    if validate_inputs:
+    if validate_labels:
         validate_cromwell_label(label)
 
     files = {
@@ -229,18 +229,17 @@ def read_local_file(path):
 
 
 def _content_checker(regex, content):
-    """
-    Helper function to check if a string is obeying the rule described by a regex string or not.
+    """Helper function to check if a string is obeying the rule described by a regex string or not.
 
     :param str regex: A regex string defines valid content.
     :param str content: A string to be validated.
 
     :return str: A string of error message if validation fails, or an empty string if validation succeeds.
     """
-    try:
+    if "fullmatch" in dir(re):  # For Python3.4+
         matched = re.fullmatch(regex, content)
-    except AttributeError:
-        matched = _fullmatch(regex, content)
+    else:  # For Python3.3/2.7 or earlier versions
+        matched = _emulate_python_fullmatch(regex, content)
 
     if not matched:
         return 'Invalid label: {0} did not match the regex {1}.\n'.format(content, regex)
@@ -249,8 +248,7 @@ def _content_checker(regex, content):
 
 
 def _length_checker(length, content):
-    """
-    Helper function to check if a string is shorter than expected length of not.
+    """Helper function to check if a string is shorter than expected length of not.
 
     :param int length: Maximum length of an expected string.
     :param str content: A string to be validated.
@@ -263,9 +261,8 @@ def _length_checker(length, content):
         return ''
 
 
-def _fullmatch(regex, string, flags=0):
-    """
-    Backport Python 3.4's regular expression "fullmatch()" to Python 2 by emulating python-3.4 re.fullmatch().
+def _emulate_python_fullmatch(regex, string, flags=0):
+    """Backport Python 3.4's regular expression "fullmatch()" to Python 2 by emulating python-3.4 re.fullmatch().
 
     If the whole string matches the regular expression pattern, return a corresponding match object.
      Return None if the string does not match the pattern; note that this is different from a zero-length match.
