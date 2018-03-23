@@ -272,7 +272,7 @@ def _fullmatch(regex, string, flags=0):
 
     :param str regex: A regex string.
     :param str string: The string that you want to apply regex match to.
-    :param str/int flags: The expression’s behaviour can be modified by specifying a flags value. Values can be any of
+    :param str|int flags: The expression's behaviour can be modified by specifying a flags value. Values can be any of
      the variables listed in https://docs.python.org/3/library/re.html
 
     :return SRE_Match/None: return a corresponding match object, or None if the string does not match the pattern.
