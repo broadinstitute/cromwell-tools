@@ -130,7 +130,7 @@ def start_workflow(
     :param _io.BytesIO zip_file: (optional) zip file containing dependencies.
     :param str user: (optional) cromwell username.
     :param str password: (optional) cromwell password.
-    :param _io.BytesIO label: (optional) JSON file containing a collection of key/value pairs for workflow labels.
+    :param str|_io.BytesIO label: (optional) JSON file containing a collection of key/value pairs for workflow labels.
     :param bool validate_labels: (optional) Whether to validate labels or not, using cromwell-tools' built-in
      validators. It is set to True by default.
 
@@ -287,7 +287,7 @@ def validate_cromwell_label(label_object):
         Both the docs and the code base of Cromwell could possibly change in the future, please update this
         checker on demand.
 
-    :param str label_object: A dictionary or a key-value object string that define a Cromwell label.
+    :param str|_io.BytesIO label_object: A dictionary or a key-value object string that define a Cromwell label.
 
     :raises ValueError: This validator will raise an exception if the label_object is invalid as a Cromwell label.
     """
