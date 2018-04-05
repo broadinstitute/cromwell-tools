@@ -13,6 +13,7 @@ from cromwell_tools import cromwell_tools
 import zipfile
 import os
 import json
+from tenacity import stop_after_delay, stop_after_attempt
 
 
 class TestUtils(unittest.TestCase):
@@ -37,31 +38,54 @@ class TestUtils(unittest.TestCase):
             "comment": "this-is-a-test-label"
         }
 
+    def setUp(self):
+        self.wdl_file = io.BytesIO(b"wdl_file_content")
+        self.zip_file = io.BytesIO(b"zip_file_content")
+        self.inputs_file = io.BytesIO(b"inputs_file_content")
+        self.inputs_file2 = io.BytesIO(b"inputs_file2_content")
+        self.options_file = io.BytesIO(b"options_file_content")
+        self.label = io.BytesIO(b'{"test-label-key": "test-label-value"}')
+        self.url = "https://fake_url"
+        self.user = "fake_user"
+        self.password = "fake_password"
+
     @requests_mock.mock()
     def test_start_workflow(self, mock_request):
         """Unit test using mocks
         """
-        wdl_file = io.BytesIO(b"wdl_file_content")
-        zip_file = io.BytesIO(b"zip_file_content")
-        inputs_file = io.BytesIO(b"inputs_file_content")
-        inputs_file2 = io.BytesIO(b"inputs_file2_content")
-        options_file = io.BytesIO(b"options_file_content")
-        label = io.BytesIO(b'{"test-label-key": "test-label-value"}')
-
         def _request_callback(request, context):
             context.status_code = 200
             context.headers['test'] = 'header'
             return {'request': {'body': "content"}}
 
-        url = "https://fake_url"
-        user = "fake_user"
-        password = "fake_password"
         # Check request actions
-        mock_request.post(url, json=_request_callback)
+        mock_request.post(self.url, json=_request_callback)
         result = cromwell_tools.start_workflow(
-            wdl_file, inputs_file, url, options_file, inputs_file2, zip_file, user, password, label)
+            self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file, self.user,
+            self.password, self.label)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.headers.get('test'), 'header')
+
+    @requests_mock.mock()
+    def test_start_workflow_retries_on_error(self, mock_request):
+        def _request_callback(request, context):
+            context.status_code = 500
+            context.headers['test'] = 'header'
+            return {'status': 'error', 'message': 'Internal Server Error'}
+
+        # Make the test complete faster by limiting the number of retries
+        cromwell_tools.start_workflow.retry.stop = stop_after_attempt(3)
+
+        # Check request actions
+        mock_request.post(self.url, json=_request_callback)
+        with self.assertRaises(requests.HTTPError):
+            result = cromwell_tools.start_workflow(
+                self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
+                self.user, self.password, self.label)
+            self.assertNotEqual(mock_request.call_count, 1)
+
+        # Reset default retry value
+        cromwell_tools.start_workflow.retry.stop = stop_after_delay(20)
 
     @requests_mock.mock()
     def test_download_http_raises_error_on_bad_status_code(self, mock_request):
