@@ -9,6 +9,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import six
 import re
+from tenacity import retry, wait_exponential, stop_after_delay
 
 
 _failed_statuses = ['Failed', 'Aborted', 'Aborting']
@@ -114,10 +115,12 @@ def wait_until_workflow_completes(
             time.sleep(poll_interval_seconds)
 
 
+@retry(reraise=True, wait=wait_exponential(multiplier=1, max=10), stop=stop_after_delay(20))
 def start_workflow(
         wdl_file, inputs_file, url, options_file=None, inputs_file2=None, zip_file=None, user=None,
         password=None, label=None, validate_labels=True):
-    """Use HTTP POST to start workflow in Cromwell.
+    """Use HTTP POST to start workflow in Cromwell and retry with exponentially increasing wait times between requests
+       if there are any failures. View statistics about the retries with `start_workflow.retry.statistics`.
 
     The requests library could accept both Bytes and String objects as parameters of files, so there is no
         strict restrictions on the type of inputs of this function.
@@ -160,6 +163,7 @@ def start_workflow(
         files['labels'] = label
 
     response = requests.post(url, files=files, auth=auth)
+    response.raise_for_status()
     return response
 
 
