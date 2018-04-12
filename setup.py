@@ -26,8 +26,8 @@ setup(
     license='BSD 3-clause "New" or "Revised" License',
     packages=['cromwell_tools'],
     install_requires=[
-        'requests',
-        'six'
+        'requests==2.18.4',
+        'six==1.11.0'
     ],
     scripts=['cromwell_tools/scripts/cromwell-tools'],
     include_package_data=True
