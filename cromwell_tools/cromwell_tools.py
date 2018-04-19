@@ -10,6 +10,7 @@ from requests.auth import HTTPBasicAuth
 import six
 import re
 from tenacity import retry, wait_exponential, stop_after_delay
+from oauth2client.service_account import ServiceAccountCredentials
 
 
 _failed_statuses = ['Failed', 'Aborted', 'Aborting']
@@ -45,8 +46,19 @@ def harmonize_credentials(secrets_file=None, cromwell_username=None, cromwell_pa
     return cromwell_username, cromwell_password
 
 
+def _get_auth_credentials(secrets_file=None, cromwell_user=None, cromwell_password=None, caas_key=None):
+    if caas_key:
+        headers = generate_auth_header_from_key_file(caas_key)
+        auth = None
+    else:
+        headers = None
+        cromwell_user, cromwell_password = harmonize_credentials(secrets_file, cromwell_user, cromwell_password)
+        auth = requests.auth.HTTPBasicAuth(cromwell_user, cromwell_password)
+    return auth, headers
+
+
 def get_workflow_statuses(
-        ids, cromwell_url, cromwell_user=None, cromwell_password=None, secrets_file=None):
+        ids, cromwell_url, cromwell_user=None, cromwell_password=None, secrets_file=None, caas_key=None):
     """ Given a list of workflow ids, query cromwell url for their statuses
 
     :param list ids:
@@ -54,15 +66,14 @@ def get_workflow_statuses(
     :param str cromwell_user:
     :param str cromwell_password:
     :param str secrets_file:
+    :param str caas_key: service account JSON key for cromwell-as-a-service
     :return list: list of workflow statuses
     """
-    cromwell_user, cromwell_password = harmonize_credentials(
-        secrets_file, cromwell_user, cromwell_password)
     statuses = []
+    auth, headers = _get_auth_credentials(secrets_file, cromwell_user, cromwell_password, caas_key)
     for id_ in ids:
         full_url = cromwell_url + '/api/workflows/v1/{0}/status'.format(id_)
-        auth = requests.auth.HTTPBasicAuth(cromwell_user, cromwell_password)
-        response = requests.get(full_url, auth=auth)
+        response = requests.get(full_url, auth=auth, headers=headers)
         if response.status_code != 200:
             print('Could not get status for {0}. Cromwell at {1} returned status {2}'.format(
                 id_, cromwell_url, response.status_code))
@@ -78,7 +89,7 @@ def get_workflow_statuses(
 
 def wait_until_workflow_completes(
         cromwell_url, workflow_ids, timeout_minutes, poll_interval_seconds=30, cromwell_user=None,
-        cromwell_password=None, secrets_file=None):
+        cromwell_password=None, secrets_file=None, caas_key=None):
     """
     Given a list of workflow ids, wait until cromwell returns successfully for each status, or
     one of the workflows fails or is aborted.
@@ -91,6 +102,7 @@ def wait_until_workflow_completes(
     :param str cromwell_user:
     :param str cromwell_password:
     :param str secrets_file:
+    :param str caas_key: service account JSON key for cromwell-as-a-service
     :return:
     """
     cromwell_user, cromwell_password = harmonize_credentials(
@@ -101,7 +113,7 @@ def wait_until_workflow_completes(
         if datetime.now() - start > timeout:
             msg = 'Unfinished workflows after {0} minutes.'
             raise Exception(msg.format(timeout))
-        statuses = get_workflow_statuses(workflow_ids, cromwell_url, cromwell_user, cromwell_password)
+        statuses = get_workflow_statuses(workflow_ids, cromwell_url, cromwell_user, cromwell_password, caas_key)
         all_succeeded = True
         for i, status in enumerate(statuses):
             if status in _failed_statuses:
@@ -118,7 +130,7 @@ def wait_until_workflow_completes(
 @retry(reraise=True, wait=wait_exponential(multiplier=1, max=10), stop=stop_after_delay(20))
 def start_workflow(
         wdl_file, inputs_file, url, options_file=None, inputs_file2=None, zip_file=None, user=None,
-        password=None, label=None, validate_labels=True):
+        password=None, caas_key=None, collection_name=None, label=None, validate_labels=True):
     """Use HTTP POST to start workflow in Cromwell and retry with exponentially increasing wait times between requests
        if there are any failures. View statistics about the retries with `start_workflow.retry.statistics`.
 
@@ -133,6 +145,8 @@ def start_workflow(
     :param _io.BytesIO zip_file: (optional) zip file containing dependencies.
     :param str user: (optional) cromwell username.
     :param str password: (optional) cromwell password.
+    :param str caas_key: (optional) service account JSON key for cromwell-as-a-service.
+    :param str collection_name: (optional) collection in SAM that the workflow should belong to.
     :param str|_io.BytesIO label: (optional) JSON file containing a collection of key/value pairs for workflow labels.
     :param bool validate_labels: (optional) Whether to validate labels or not, using cromwell-tools' built-in
      validators. It is set to True by default.
@@ -153,16 +167,13 @@ def start_workflow(
         files['workflowDependencies'] = zip_file
     if options_file is not None:
         files['workflowOptions'] = options_file
-
-    if user and password:
-        auth = HTTPBasicAuth(user, password)
-    else:
-        auth = None
-
     if label:
         files['labels'] = label
+    if caas_key and collection_name:
+        files['collectionName'] = collection_name
 
-    response = requests.post(url, files=files, auth=auth)
+    auth, headers = _get_auth_credentials(cromwell_user=user, cromwell_password=password, caas_key=caas_key)
+    response = requests.post(url, files=files, auth=auth, headers=headers)
     response.raise_for_status()
     return response
 
@@ -310,3 +321,9 @@ def validate_cromwell_label(label_object):
 
     if err_msg != '':
         raise ValueError(err_msg)
+
+
+def generate_auth_header_from_key_file(json_credentials):
+    scopes = ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email']
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(json_credentials, scopes=scopes)
+    return {"Authorization": "bearer " + credentials.get_access_token().access_token}
