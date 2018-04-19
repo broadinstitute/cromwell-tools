@@ -17,7 +17,8 @@ CLASSIFIERS = [
 
 setup(
     name='cromwell-tools',
-    version='1.0.1',
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
     description='Utilities for interacting with the Cromwell workflow engine',
     classifiers=CLASSIFIERS,
     url='http://github.com/broadinstitute/cromwell-tools',
@@ -29,8 +30,10 @@ setup(
         'requests==2.18.4',
         'six==1.11.0',
         'oauth2client==4.1.2',
-        'tenacity==4.10.0'
+        'tenacity==4.10.0',
+        'setuptools_scm==2.0.0'
     ],
     scripts=['cromwell_tools/scripts/cromwell-tools'],
     include_package_data=True
 )
+git
