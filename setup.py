@@ -36,4 +36,4 @@ setup(
     scripts=['cromwell_tools/scripts/cromwell-tools'],
     include_package_data=True
 )
-git
+
