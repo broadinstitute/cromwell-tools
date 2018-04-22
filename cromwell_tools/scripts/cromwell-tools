@@ -70,6 +70,13 @@ def main(arguments=None):
             cromwell_password=password,
             secrets_file=arguments.secrets_file
         )
+    elif arguments.command == 'validate':
+        cromwell_tools.validate_workflow(
+            wdl=arguments.wdl_file,
+            womtool_path=arguments.womtool_path,
+            dependencies_json=arguments.dependencies_json
+        )
+
     else:
         raise RuntimeError('main function received invalid subcommand. This is likely an error in '
                            'testing input.')
@@ -87,6 +94,8 @@ if __name__ == '__main__':
         'wait', help='wait help', description='Wait for one or more running workflow to finish.')
     status = subparsers.add_parser(
         'status', help='status help', description='Get the status of one or more workflows.')
+    validate = subparsers.add_parser(
+        'validate', help='validate help', description='Validate a cromwell workflow using womtool')
 
     # cromwell url and security arguments apply to all sub-commands
     sub_commands = [run, wait, status]
@@ -112,6 +121,12 @@ if __name__ == '__main__':
 
     # status arguments
     status.add_argument('--workflow-ids', nargs='+', required=True)
+
+    # validate arguments
+    validate.add_argument('--wdl-file', type=str, required=True)
+    validate.add_argument('--womtool-path', type=str, required=True,
+                          help='path to cromwell womtool jar')
+    validate.add_argument('--dependencies-json', type=str, default=None)
 
     args = main_parser.parse_args()
     main(args)

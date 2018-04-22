@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 import io
+import zipfile
+import os
+import json
+import tempfile
+
+from tenacity import stop_after_delay, stop_after_attempt
 import requests
 import requests_mock
 import unittest
@@ -9,12 +15,8 @@ try:
 except ImportError:
     # if python2
     import mock
-from cromwell_tools import cromwell_tools
-import zipfile
-import os
-import json
-from tenacity import stop_after_delay, stop_after_attempt
 
+from cromwell_tools import cromwell_tools
 
 class TestUtils(unittest.TestCase):
 
@@ -233,6 +235,56 @@ class TestUtils(unittest.TestCase):
 
     def test_validate_cromwell_label_on_valid_labels_bytes_object(self):
         self.assertIsNone(cromwell_tools.validate_cromwell_label(json.dumps(self.valid_labels).encode('utf-8')))
+
+    def test_localize_file_https(self):
+        temporary_directory = tempfile.mkdtemp()
+        # grab this file from the master branch of the cromwell-tools repository
+        target = ('https://raw.githubusercontent.com/broadinstitute/cromwell-tools/master/'
+                  'cromwell_tools/tests/test_cromwell_tools.py')
+        cromwell_tools._localize_file(target, temporary_directory)
+        localized_file = os.path.join(temporary_directory, os.path.basename(target))
+
+        # verify the file was downloaded and that it contains some content we expect
+        assert os.path.isfile(localized_file)
+        with open(localized_file, 'r') as f:
+            assert 'cromwell_tools' in f.read()
+
+
+class TestValidate(unittest.TestCase):
+
+    def test_localize_file(self):
+        temporary_directory = tempfile.mkdtemp()
+
+        # test that we can localize both local and https files. Use this file as a convenient target
+        targets = [
+            'https://raw.githubusercontent.com/broadinstitute/cromwell-tools/master/'
+            'cromwell_tools/tests/test_cromwell_tools.py',
+            __file__
+        ]
+        for target in targets:
+            cromwell_tools._localize_file(target, temporary_directory)
+            localized_file = os.path.join(temporary_directory, os.path.basename(target))
+
+            # verify the file was localized and that it contains some expected content
+            assert os.path.isfile(localized_file)
+            with open(localized_file, 'r') as f:
+                assert 'cromwell_tools' in f.read()
+            os.remove(localized_file)
+
+    def test_validate_wdl(self):
+
+        # change dir so we can leverage relative paths to data
+        cwd = os.getcwd()
+        test_directory = os.path.dirname(__file__)
+        os.chdir(test_directory)
+
+        womtool = os.path.expanduser('~/google_drive/software/womtool-31.jar')  # todo fix this
+        wdl = 'data/test_workflow.wdl'
+        dependencies_json = 'data/test_dependencies.json'
+        cromwell_tools.validate_workflow(wdl, womtool, dependencies_json)
+
+        # put the directory back how we found it
+        os.chdir(cwd)
 
 
 if __name__ == '__main__':
