@@ -153,7 +153,7 @@ def start_workflow(
 
     :return requests.Response response: HTTP response from cromwell.
     """
-    if validate_labels:
+    if validate_labels and label is not None:
         validate_cromwell_label(label)
 
     files = {
