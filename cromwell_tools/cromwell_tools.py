@@ -22,43 +22,62 @@ _CROMWELL_LABEL_KEY_REGEX = '[a-z]([-a-z0-9]*[a-z0-9])?'
 _CROMWELL_LABEL_VALUE_REGEX = '([a-z0-9]*[-a-z0-9]*[a-z0-9])?'
 
 
-def harmonize_credentials(secrets_file=None, cromwell_username=None, cromwell_password=None):
+def harmonize_credentials(
+        secrets_file=None, cromwell_username=None, cromwell_password=None, cromwell_url=None):
     """
     Takes all of the valid ways of providing authentication to cromwell and returns a username
     and password
 
     :param str cromwell_password:
     :param str cromwell_username:
+    :param str cromwell_url:
     :param str secrets_file: json file containing fields cromwell_user and cromwell_password
 
     :return str: cromwell username
     :return str: cromwell password
     """
-    if cromwell_username is None or cromwell_password is None:
+    if cromwell_username is None or cromwell_password is None or cromwell_url is None:
         if secrets_file is None:
             raise ValueError('One form of cromwell authentication must be provided, please pass '
-                             'either cromwell_user and cromwell_password or a secrets_file.')
+                             'either cromwell_user, cromwell_password, and cromwell_url or a '
+                             'secrets_file.')
         else:
             with open(secrets_file) as f:
                 secrets = json.load(f)
                 cromwell_username = secrets['cromwell_user']
                 cromwell_password = secrets['cromwell_password']
-    return cromwell_username, cromwell_password
+                cromwell_url = secrets['cromwell_url']
+    return cromwell_username, cromwell_password, cromwell_url
 
 
-def _get_auth_credentials(secrets_file=None, cromwell_user=None, cromwell_password=None, caas_key=None):
+def _get_auth_credentials(
+        secrets_file=None, cromwell_user=None, cromwell_password=None, cromwell_url=None,
+        caas_key=None):
+    """obtain authentication and headers from user, password, and cromwell endpoint
+
+    :param str secrets_file:
+    :param str cromwell_user:
+    :param str cromwell_password:
+    :param str cromwell_url:
+    :param str caas_key:
+
+    :return str: auth
+    :return str: headers
+    """
     if caas_key:
         headers = generate_auth_header_from_key_file(caas_key)
         auth = None
     else:
         headers = None
-        cromwell_user, cromwell_password = harmonize_credentials(secrets_file, cromwell_user, cromwell_password)
+        cromwell_user, cromwell_password, cromwell_url = harmonize_credentials(
+            secrets_file, cromwell_user, cromwell_password, cromwell_url)
         auth = requests.auth.HTTPBasicAuth(cromwell_user, cromwell_password)
-    return auth, headers
+    return auth, headers, cromwell_url
 
 
 def get_workflow_statuses(
-        ids, cromwell_url, cromwell_user=None, cromwell_password=None, secrets_file=None, caas_key=None):
+        ids, cromwell_url=None, cromwell_user=None, cromwell_password=None, secrets_file=None,
+        caas_key=None):
     """ Given a list of workflow ids, query cromwell url for their statuses
 
     :param list ids:
@@ -70,7 +89,8 @@ def get_workflow_statuses(
     :return list: list of workflow statuses
     """
     statuses = []
-    auth, headers = _get_auth_credentials(secrets_file, cromwell_user, cromwell_password, caas_key)
+    auth, headers, cromwell_url = _get_auth_credentials(
+        secrets_file, cromwell_user, cromwell_password, cromwell_url, caas_key)
     for id_ in ids:
         full_url = cromwell_url + '/api/workflows/v1/{0}/status'.format(id_)
         response = requests.get(full_url, auth=auth, headers=headers)
@@ -88,8 +108,8 @@ def get_workflow_statuses(
 
 
 def wait_until_workflow_completes(
-        cromwell_url, workflow_ids, timeout_minutes, poll_interval_seconds=30, cromwell_user=None,
-        cromwell_password=None, secrets_file=None, caas_key=None):
+        workflow_ids, timeout_minutes, poll_interval_seconds=30, cromwell_url=None,
+        cromwell_user=None, cromwell_password=None, secrets_file=None, caas_key=None):
     """
     Given a list of workflow ids, wait until cromwell returns successfully for each status, or
     one of the workflows fails or is aborted.
@@ -105,15 +125,16 @@ def wait_until_workflow_completes(
     :param str caas_key: service account JSON key for cromwell-as-a-service
     :return:
     """
-    cromwell_user, cromwell_password = harmonize_credentials(
-        secrets_file, cromwell_user, cromwell_password)
+    cromwell_user, cromwell_password, cromwell_url = harmonize_credentials(
+        secrets_file, cromwell_user, cromwell_password, cromwell_url)
     start = datetime.now()
     timeout = timedelta(minutes=int(timeout_minutes))
     while True:
         if datetime.now() - start > timeout:
             msg = 'Unfinished workflows after {0} minutes.'
             raise Exception(msg.format(timeout))
-        statuses = get_workflow_statuses(workflow_ids, cromwell_url, cromwell_user, cromwell_password, caas_key)
+        statuses = get_workflow_statuses(
+            workflow_ids, cromwell_url, cromwell_user, cromwell_password, secrets_file, caas_key)
         all_succeeded = True
         for i, status in enumerate(statuses):
             if status in _failed_statuses:
@@ -129,8 +150,9 @@ def wait_until_workflow_completes(
 
 @retry(reraise=True, wait=wait_exponential(multiplier=1, max=10), stop=stop_after_delay(20))
 def start_workflow(
-        wdl_file, inputs_file, url, options_file=None, inputs_file2=None, zip_file=None, user=None,
-        password=None, caas_key=None, collection_name=None, label=None, validate_labels=True):
+        wdl_file, inputs_file, options_file=None, inputs_file2=None, zip_file=None,
+        cromwell_url=None, cromwell_user=None, cromwell_password=None, secrets_file=None,
+        caas_key=None, collection_name=None, label=None, validate_labels=True):
     """Use HTTP POST to start workflow in Cromwell and retry with exponentially increasing wait times between requests
        if there are any failures. View statistics about the retries with `start_workflow.retry.statistics`.
 
@@ -139,12 +161,13 @@ def start_workflow(
 
     :param _io.BytesIO wdl_file: wdl file.
     :param _io.BytesIO inputs_file: inputs file.
-    :param str url: cromwell url.
     :param _io.BytesIO options_file: (optional) cromwell configs file.
     :param _io.BytesIO inputs_file2: (optional) inputs file 2.
     :param _io.BytesIO zip_file: (optional) zip file containing dependencies.
-    :param str user: (optional) cromwell username.
-    :param str password: (optional) cromwell password.
+    :param str cromwell_url: (optional) cromwell url.
+    :param str cromwell_user: (optional) cromwell username.
+    :param str cromwell_password: (optional) cromwell password.
+    :param str secrets_file: (optional) file containing cromwell url, user, and password
     :param str caas_key: (optional) service account JSON key for cromwell-as-a-service.
     :param str collection_name: (optional) collection in SAM that the workflow should belong to.
     :param str|_io.BytesIO label: (optional) JSON file containing a collection of key/value pairs for workflow labels.
@@ -153,6 +176,7 @@ def start_workflow(
 
     :return requests.Response response: HTTP response from cromwell.
     """
+
     if validate_labels and label is not None:
         validate_cromwell_label(label)
 
@@ -172,8 +196,10 @@ def start_workflow(
     if caas_key and collection_name:
         files['collectionName'] = collection_name
 
-    auth, headers = _get_auth_credentials(cromwell_user=user, cromwell_password=password, caas_key=caas_key)
-    response = requests.post(url, files=files, auth=auth, headers=headers)
+    auth, headers, cromwell_url = _get_auth_credentials(
+        cromwell_user=cromwell_user, cromwell_password=cromwell_password, cromwell_url=cromwell_url,
+        secrets_file=secrets_file, caas_key=caas_key)
+    response = requests.post(cromwell_url, files=files, auth=auth, headers=headers)
     response.raise_for_status()
     return response
 
