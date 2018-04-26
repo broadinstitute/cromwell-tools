@@ -126,6 +126,26 @@ class TestUtils(unittest.TestCase):
         self.assertIn('Succeeded', result)
 
     @requests_mock.mock()
+    def test_get_workflow_metadata(self, mock_request):
+        def _request_callback(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'request': {'body': "content"}}
+
+        def _request_callback_metadata(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'metadata': 'lots of stuff'}
+
+        id_ = "01234"
+        mock_request.post(self.url, json=_request_callback)
+        mock_request.get(
+            self.url + '/api/workflows/v1/{}/metadata'.format(id_[0]),
+            json=_request_callback_metadata)
+        result = cromwell_tools.get_metadata(id_, self.url, self.user, self.password)
+        self.assertIn('stuff', result)
+
+    @requests_mock.mock()
     @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
     def test_get_workflow_statuses_in_cromwell_as_a_service(self, mock_request, mock_header):
         def _request_callback(request, context):
