@@ -278,7 +278,7 @@ class TestValidate(unittest.TestCase):
         test_directory = os.path.dirname(__file__)
         os.chdir(test_directory)
 
-        womtool = os.path.expanduser('~/google_drive/software/womtool-31.jar')  # todo fix this
+        womtool = os.environ['WOMTOOL']
         wdl = 'data/test_workflow.wdl'
         dependencies_json = 'data/test_dependencies.json'
         cromwell_tools.validate_workflow(wdl, womtool, dependencies_json)
