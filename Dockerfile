@@ -23,7 +23,7 @@ RUN pip install -r requirements.txt
 RUN python setup.py install
 
 # download and expose womtool
-COPY https://github.com/broadinstitute/cromwell/releases/download/31/womtool-31.jar womtool-31.jar
+ADD https://github.com/broadinstitute/cromwell/releases/download/31/womtool-31.jar womtool-31.jar
 ENV WOMTOOL womtool-31.jar
 
 # install java 8
