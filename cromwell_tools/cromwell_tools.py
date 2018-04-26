@@ -390,3 +390,30 @@ def validate_workflow(wdl, womtool_path, dependencies_json=None):
     print('stdout:\n%s' % out.decode())
 
 
+def get_metadata(
+        cromwell_uuid, cromwell_url, cromwell_user, cromwell_password, secrets_file, caas_key):
+    """ retrieve metadata from cromwell for a cromwell run identified by cromwell_uuid
+
+    :param str cromwell_uuid:
+    :param str cromwell_url:
+    :param str cromwell_user:
+    :param str cromwell_password:
+    :param str secrets_file:
+    :return:
+    """
+    cromwell_user, cromwell_password = harmonize_credentials(
+        secrets_file, cromwell_user, cromwell_password)
+    auth, headers = _get_auth_credentials(
+        cromwell_user=cromwell_user, cromwell_password=cromwell_password, caas_key=caas_key)
+    requests.post(cromwell_url, auth=auth, headers=headers)
+
+    # abstract this into a function
+    full_url = cromwell_url + '/api/workflows/v1/{0}/metadata'.format(cromwell_uuid)
+    response = requests.get(full_url, auth=auth, headers=headers)
+    if response.status_code != 200:
+        print('Could not get status for {0}. Cromwell at {1} returned status {2}'.format(
+            cromwell_uuid, cromwell_url, response.status_code))
+    else:
+        response_json = response.json()
+        metadata = response_json['metadata']
+        print(metadata)

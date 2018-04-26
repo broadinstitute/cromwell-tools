@@ -61,11 +61,11 @@ def main(arguments=None):
             secrets_file=arguments.secrets_file
         )
     elif arguments.command == 'status':
-        user, password, = cromwell_tools.harmonize_credentials(
+        user, password, url = cromwell_tools.harmonize_credentials(
             arguments.secrets_file, arguments.username, arguments.password)
         cromwell_tools.get_workflow_statuses(
             ids=arguments.workflow_ids,
-            cromwell_url=arguments.cromwell_url,
+            cromwell_url=url,
             cromwell_user=user,
             cromwell_password=password,
             secrets_file=arguments.secrets_file
@@ -76,7 +76,14 @@ def main(arguments=None):
             womtool_path=arguments.womtool_path,
             dependencies_json=arguments.dependencies_json
         )
-
+    elif arguments.command == 'metadata':
+        cromwell_tools.get_metadata(
+            uuid=arguments.run_identifier,
+            cromwell_url=arguments.cromwell_url,
+            cromwell_user=arguments.username,
+            cromwell_password=arguments.password,
+            secrets_file=arguments.secrets_file,
+        )
     else:
         raise RuntimeError('main function received invalid subcommand. This is likely an error in '
                            'testing input.')
@@ -96,9 +103,11 @@ if __name__ == '__main__':
         'status', help='status help', description='Get the status of one or more workflows.')
     validate = subparsers.add_parser(
         'validate', help='validate help', description='Validate a cromwell workflow using womtool')
+    metadata = subparsers.add_parser(
+        'metadata', help='metadata help', description='Retrieve the metadata for a cromwell run')
 
     # cromwell url and security arguments apply to all sub-commands
-    sub_commands = [run, wait, status]
+    sub_commands = [run, wait, status, metadata]
     for p in sub_commands:
         p.add_argument('-c', '--cromwell-url')
         p.add_argument('-u', '--username', default=None)
@@ -127,6 +136,9 @@ if __name__ == '__main__':
     validate.add_argument('--womtool-path', type=str, required=True,
                           help='path to cromwell womtool jar')
     validate.add_argument('--dependencies-json', type=str, default=None)
+
+    # metadata arguments
+    metadata.add_argument('run_identifier', help='uuid corresponding to a cromwell run', type=str)
 
     args = main_parser.parse_args()
     main(args)
