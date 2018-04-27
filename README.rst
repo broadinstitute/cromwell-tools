@@ -27,7 +27,7 @@ Commandline Interface
 
 This package installs a command line interface, which is used as follows:
 
-.. code:: bash
+.. code::
 
     $> cromwell-tools -h
     usage: cromwell-tools [-h] {run,wait,status} ...
@@ -46,7 +46,7 @@ Sub-commands to start, wait for completion, and determining status of jobs are e
 
 - To start a job:
 
-.. code:: bash
+.. code::
 
     cromwell-tools run -h
     usage: cromwell-tools run [-h] [-c CROMWELL_URL] [-u USERNAME] [-p PASSWORD]
@@ -72,7 +72,7 @@ Sub-commands to start, wait for completion, and determining status of jobs are e
 
 - To wait for completion of jobs:
 
-.. code:: bash
+.. code::
 
     $> cromwell-tools wait -h
     usage: cromwell-tools wait [-h] [-c CROMWELL_URL] [-u USERNAME] [-p PASSWORD]
@@ -97,7 +97,7 @@ Sub-commands to start, wait for completion, and determining status of jobs are e
 
 - To determine the status(es) of jobs:
 
-.. code:: bash
+.. code::
 
     cromwell-tools status -h
     usage: cromwell-tools status [-h] [-c CROMWELL_URL] [-u USERNAME]
@@ -134,7 +134,7 @@ To run tests:
 
 Create and activate a virtualenv with requirements:
 
-.. code:: bash
+.. code::
 
     virtualenv test-env
     pip install -r requirements.txt -r test-requirements.txt
@@ -143,7 +143,7 @@ Create and activate a virtualenv with requirements:
 
 Then, from the root of the cromwell-tools repo, do:
 
-.. code:: bash
+.. code::
 
     python -m unittest discover -v
 
