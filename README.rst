@@ -12,7 +12,9 @@ This repo contains a cromwell_tools Python package and IPython notebooks for int
 Installation
 ============
 
-Install it like this::
+Install it like this:
+
+.. code:: bash
 
     pip install git+git://github.com/broadinstitute/cromwell-tools.git
 
@@ -23,8 +25,9 @@ Usage
 Commandline Interface
 ---------------------
 
-This package installs a command line interface, which is used as follows::
+This package installs a command line interface, which is used as follows:
 
+.. code:: bash
 
     $> cromwell-tools -h
     usage: cromwell-tools [-h] {run,wait,status} ...
@@ -41,7 +44,9 @@ This package installs a command line interface, which is used as follows::
 
 Sub-commands to start, wait for completion, and determining status of jobs are exposed by this CLI:
 
-- To start a job::
+- To start a job:
+
+.. code:: bash
 
     cromwell-tools run -h
     usage: cromwell-tools run [-h] [-c CROMWELL_URL] [-u USERNAME] [-p PASSWORD]
@@ -65,7 +70,9 @@ Sub-commands to start, wait for completion, and determining status of jobs are e
       --inputs2-json INPUTS2_JSON
       --options-file OPTIONS_FILE
 
-- To wait for completion of jobs::
+- To wait for completion of jobs:
+
+.. code:: bash
 
     $> cromwell-tools wait -h
     usage: cromwell-tools wait [-h] [-c CROMWELL_URL] [-u USERNAME] [-p PASSWORD]
@@ -88,7 +95,9 @@ Sub-commands to start, wait for completion, and determining status of jobs are e
       --poll-interval-seconds POLL_INTERVAL_SECONDS
                             seconds between polling cromwell for workflow status
 
-- To determine the status(es) of jobs::
+- To determine the status(es) of jobs:
+
+.. code:: bash
 
     cromwell-tools status -h
     usage: cromwell-tools status [-h] [-c CROMWELL_URL] [-u USERNAME]
@@ -109,7 +118,9 @@ Python API
 ----------
 The rest of the package consists of scripts that are meant to be invoked from the command line.
 
-In Python, you can then import the package with::
+In Python, you can then import the package with:
+
+.. code:: python
 
     from cromwell_tools import cromwell_tools
     cromwell_tools.start_workflow(*args)
@@ -121,14 +132,18 @@ Testing
 
 To run tests:
 
-Create and activate a virtualenv with requirements::
+Create and activate a virtualenv with requirements:
+
+.. code:: bash
 
     virtualenv test-env
     pip install -r requirements.txt -r test-requirements.txt
     source test-env/bin/activate
 
 
-Then, from the root of the cromwell-tools repo, do::
+Then, from the root of the cromwell-tools repo, do:
+
+.. code:: bash
 
     python -m unittest discover -v
 
