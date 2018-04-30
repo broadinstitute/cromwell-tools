@@ -4,10 +4,17 @@ Cromwell-tools
 .. image:: https://travis-ci.org/broadinstitute/cromwell-tools.svg?branch=master
     :target: https://travis-ci.org/broadinstitute/cromwell-tools
 
+.. image:: https://readthedocs.org/projects/cromwell-tools/badge/?version=latest
+    :target: http://cromwell-tools.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. note::
+    This tool is still under active development, so there could be significant changes to its API.
+
 Overview
 ========
 
-This repo contains a cromwell_tools Python package and IPython notebooks for interacting with Cromwell.
+This repo contains a cromwell_tools Python package and IPython notebooks for interacting with the `Cromwell <https://github.com/broadinstitute/cromwell>`_
 
 Installation
 ============
