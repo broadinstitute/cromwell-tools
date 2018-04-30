@@ -33,7 +33,11 @@ setup(
         'tenacity==4.10.0',
         'setuptools_scm==2.0.0'
     ],
-    scripts=['cromwell_tools/scripts/cromwell-tools'],
+    entry_points={
+        'console_scripts': [
+            'cromwell-tools = cromwell_tools._cli:main'
+        ]
+    },
     include_package_data=True
 )
 

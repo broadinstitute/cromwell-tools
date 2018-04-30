@@ -18,28 +18,26 @@ except ImportError:
 
 from cromwell_tools import cromwell_tools
 
+# set up authentication options for the tests
 temp_dir = tempfile.mkdtemp()
 secrets_file = temp_dir + 'fake_secrets.json'
+username = "fake_user"
+password = "fake_password"
+url = "https://fake_url"
+caas_key = "path/fake_key.json"
 auth = {
-    "cromwell_url": "https://fake_url",
-    "cromwell_user": "fake_user",
-    "cromwell_password": "fake_password",
+    "cromwell_url": url,
+    "cromwell_user": username,
+    "cromwell_password": password
 }
 with open(secrets_file, 'w') as f:
     json.dump(auth, f)
 
 auth_options = (
-    auth,
-    {"secrets_file": secrets_file}
+    cromwell_tools.CromwellAuth.harmonize_credentials(**auth),
+    cromwell_tools.CromwellAuth.harmonize_credentials(**{"secrets_file": secrets_file}),
+    cromwell_tools.CromwellAuth.harmonize_credentials(**{"caas_key": caas_key, "cromwell_url": url})
 )
-
-
-def _get_url(auth_or_secrets):
-    try:
-        return auth_or_secrets["cromwell_url"]
-    except KeyError:
-        with open(auth_or_secrets["secrets_file"], "r") as f:
-            return json.load(f)["cromwell_url"]
 
 
 class TestUtils(unittest.TestCase):
@@ -71,31 +69,33 @@ class TestUtils(unittest.TestCase):
         self.inputs_file2 = io.BytesIO(b"inputs_file2_content")
         self.options_file = io.BytesIO(b"options_file_content")
         self.label = io.BytesIO(b'{"test-label-key": "test-label-value"}')
-        self.url = "https://fake_url"
-        self.user = "fake_user"
-        self.password = "fake_password"
-        self.caas_key = "path/fake_key.json"
+
+    def _start_workflows(self, cromwell_auth, mock_request, _request_callback):
+        mock_request.post(cromwell_auth.url + '/api/workflows/v1', json=_request_callback)
+        return cromwell_tools.start_workflow(
+            self.wdl_file, self.inputs_file, cromwell_auth, self.options_file,
+            self.inputs_file2, self.zip_file, label=self.label)
 
     @requests_mock.mock()
-    def test_start_workflow(self, mock_request):
+    @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
+    def test_start_workflow(self, mock_request, mock_header):
         """Unit test using mocks
         """
+        mock_header.return_value = {"Authorization": "bearer fake_token"}
+
         def _request_callback(request, context):
             context.status_code = 200
             context.headers['test'] = 'header'
             return {'request': {'body': "content"}}
 
-        # Check request actions
-        for auth_kwargs in auth_options:
-            mock_request.post(_get_url(auth_kwargs), json=_request_callback)
-            result = cromwell_tools.start_workflow(
-                self.wdl_file, self.inputs_file, self.options_file, self.inputs_file2,
-                self.zip_file, label=self.label, **auth_kwargs)
+        for cromwell_auth in auth_options:
+            result = self._start_workflows(cromwell_auth, mock_request, _request_callback)
             self.assertEqual(result.status_code, 200)
             self.assertEqual(result.headers.get('test'), 'header')
 
     @requests_mock.mock()
     def test_start_workflow_retries_on_error(self, mock_request):
+
         def _request_callback(request, context):
             context.status_code = 500
             context.headers['test'] = 'header'
@@ -105,38 +105,17 @@ class TestUtils(unittest.TestCase):
         cromwell_tools.start_workflow.retry.stop = stop_after_attempt(2)
 
         # Check request actions
-        for auth_kwargs in auth_options:
-            mock_request.post(_get_url(auth_kwargs), json=_request_callback)
+        for cromwell_auth in auth_options:
             with self.assertRaises(requests.HTTPError):
-                _ = cromwell_tools.start_workflow(
-                    self.wdl_file, self.inputs_file, self.options_file, self.inputs_file2,
-                    self.zip_file, label=self.label, **auth_kwargs)
-                self.assertNotEqual(mock_request.call_count, 1)
+                _ = self._start_workflows(cromwell_auth, mock_request, _request_callback)
+                self.assertEqual(mock_request.call_count, 2)
 
         # Reset default retry value
         cromwell_tools.start_workflow.retry.stop = stop_after_delay(20)
 
     @requests_mock.mock()
     @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
-    def test_start_workflow_in_cromwell_as_a_service(self, mock_request, mock_header):
-        mock_header.return_value = {"Authorization": "bearer fake_token"}
-
-        def _request_callback(request, context):
-            context.status_code = 200
-            context.headers['test'] = 'header'
-            return {'request': {'body': "content"}}
-
-        # Check request actions
-        for auth_kwargs in auth_options:
-            mock_request.post(_get_url(auth_kwargs), json=_request_callback)
-            result = cromwell_tools.start_workflow(self.wdl_file, self.inputs_file, self.options_file,
-                                                   self.inputs_file2, self.zip_file, cromwell_url=self.url,
-                                                   caas_key=self.caas_key, label=self.label)
-            self.assertEqual(result.status_code, 200)
-            self.assertEqual(result.headers.get('test'), 'header')
-
-    @requests_mock.mock()
-    def test_get_workflow_statuses(self, mock_request):
+    def test_get_workflow_statuses(self, mock_request, mock_header):
 
         def _request_callback(request, context):
             context.status_code = 200
@@ -149,11 +128,10 @@ class TestUtils(unittest.TestCase):
             return {'status': 'Succeeded'}
 
         ids = ["01234"]
-        for auth_kwargs in auth_options:
-            url = _get_url(auth_kwargs)
-            mock_request.post(url, json=_request_callback)
-            mock_request.get(url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
-            result = cromwell_tools.get_workflow_statuses(ids, **auth_kwargs)
+        for cromwell_auth in auth_options:
+            mock_request.post(cromwell_auth.url, json=_request_callback)
+            mock_request.get(cromwell_auth.url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
+            result = cromwell_tools.get_workflow_statuses(ids, cromwell_auth)
             self.assertIn('Succeeded', result)
 
     @requests_mock.mock()

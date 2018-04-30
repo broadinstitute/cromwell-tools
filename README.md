@@ -9,12 +9,12 @@ pip install git+git://github.com/broadinstitute/cromwell-tools.git
 
 In Python, you can then do:
 ```
-from cromwell_tools import cromwell_tools
-cromwell_tools.start_workflow(*args)
+import cromwell_tools.api as cwt
+cwt.run(*args)
 ```
 assuming args is a list of arguments needed
 
-This package also installs a command line interface, which is used as follows: 
+This package also installs a command line interface that mirrors the API and is used as follows: 
 ```
 $> cromwell-tools -h
 usage: cromwell-tools [-h] {run,wait,status} ...
@@ -103,7 +103,7 @@ source test-env/bin/activate
 
 Then, from the root of the cromwell-tools repo, do:
 ```
-python -m unittest discover -v
+pytest
 ```
 
 This runs all the tests in the cromwell_tools package.
