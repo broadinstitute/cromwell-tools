@@ -30,8 +30,8 @@ setup(
         'requests>=2.18.4',
         'six>=1.11.0',
         'oauth2client>=4.1.2',
-        'tenacity==4.10.0',
-        'setuptools_scm==2.0.0'
+        'tenacity>=4.10.0',
+        'setuptools_scm>=2.0.0'
     ],
     scripts=['cromwell_tools/scripts/cromwell-tools'],
     include_package_data=True
