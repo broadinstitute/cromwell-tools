@@ -31,8 +31,7 @@ def harmonize_credentials(secrets_file=None, cromwell_username=None, cromwell_pa
     :param str cromwell_username:
     :param str secrets_file: json file containing fields cromwell_user and cromwell_password
 
-    :return str: cromwell username
-    :return str: cromwell password
+    :return tuple: (string of cromwell username, string of cromwell password)
     """
     if cromwell_username is None or cromwell_password is None:
         if secrets_file is None:
@@ -131,10 +130,13 @@ def wait_until_workflow_completes(
 def start_workflow(
         wdl_file, inputs_file, url, options_file=None, inputs_file2=None, zip_file=None, user=None,
         password=None, caas_key=None, collection_name=None, label=None, validate_labels=True):
-    """Use HTTP POST to start workflow in Cromwell and retry with exponentially increasing wait times between requests
-       if there are any failures. View statistics about the retries with `start_workflow.retry.statistics`.
+    """
+    Use HTTP POST to start workflow in Cromwell and retry with exponentially increasing wait times between requests
+    if there are any failures. View statistics about the retries with `start_workflow.retry.statistics`.
 
-    The requests library could accept both Bytes and String objects as parameters of files, so there is no
+    .. note::
+
+        The requests library could accept both Bytes and String objects as parameters of files, so there is no
         strict restrictions on the type of inputs of this function.
 
     :param _io.BytesIO wdl_file: wdl file.
@@ -295,9 +297,11 @@ def _emulate_python_fullmatch(regex, string, flags=0):
 def validate_cromwell_label(label_object):
     """Check if the label object is valid for Cromwell.
 
-    Note: this function as well as the global variables _CROMWELL_LABEL_LENGTH, _CROMWELL_LABEL_KEY_REGEX
+    .. note::
+        This function as well as the global variables _CROMWELL_LABEL_LENGTH, _CROMWELL_LABEL_KEY_REGEX
         and _CROMWELL_LABEL_VALUE_REGEX are implemented based on the Cromwell's documentation:
-        https://cromwell.readthedocs.io/en/develop/Labels/ and the Cromwell's code base:
+        https://cromwell.readthedocs.io/en/develop/Labels/
+        and the Cromwell's code base:
         https://github.com/broadinstitute/cromwell/blob/master/core/src/main/scala/cromwell/core/labels/Label.scala#L16
         Both the docs and the code base of Cromwell could possibly change in the future, please update this
         checker on demand.
@@ -324,6 +328,9 @@ def validate_cromwell_label(label_object):
 
 
 def generate_auth_header_from_key_file(json_credentials):
+    """
+    This function generates an authentication header with Bearer token from a JSON key file.
+    """
     scopes = ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email']
     credentials = ServiceAccountCredentials.from_json_keyfile_name(json_credentials, scopes=scopes)
     return {"Authorization": "bearer " + credentials.get_access_token().access_token}
