@@ -417,5 +417,4 @@ def get_metadata(
                 cromwell_uuid, cromwell_url, response.status_code))
     else:
         response_json = response.json()
-        metadata = response_json['metadata']
-        print(metadata)
+        print(json.dumps(response_json, indent=2))

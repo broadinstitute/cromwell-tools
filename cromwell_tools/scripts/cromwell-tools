@@ -78,7 +78,7 @@ def main(arguments=None):
         )
     elif arguments.command == 'metadata':
         cromwell_tools.get_metadata(
-            uuid=arguments.run_identifier,
+            cromwell_uuid=arguments.run_identifier,
             cromwell_url=arguments.cromwell_url,
             cromwell_user=arguments.username,
             cromwell_password=arguments.password,
