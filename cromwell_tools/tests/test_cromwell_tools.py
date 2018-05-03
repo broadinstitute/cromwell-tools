@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import io
 import zipfile
+
+import tempfile
 import os
 import json
-import tempfile
 
 from tenacity import stop_after_delay, stop_after_attempt
 import requests
@@ -18,13 +19,37 @@ except ImportError:
 
 from cromwell_tools import cromwell_tools
 
+temp_dir = tempfile.mkdtemp()
+secrets_file = temp_dir + 'fake_secrets.json'
+auth = {
+    "cromwell_url": "https://fake_url",
+    "cromwell_user": "fake_user",
+    "cromwell_password": "fake_password",
+}
+with open(secrets_file, 'w') as f:
+    json.dump(auth, f)
+
+auth_options = (
+    auth,
+    {"secrets_file": secrets_file}
+)
+
+
+def _get_url(auth_or_secrets):
+    try:
+        return auth_or_secrets["cromwell_url"]
+    except KeyError:
+        with open(auth_or_secrets["secrets_file"], "r") as f:
+            return json.load(f)["cromwell_url"]
+
+
 class TestUtils(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         # Change to test directory, as tests may have been invoked from another dir
-        dir = os.path.abspath(os.path.dirname(__file__))
-        os.chdir(dir)
+        dir_ = os.path.abspath(os.path.dirname(__file__))
+        os.chdir(dir_)
         cls.invalid_labels = {
             "0-label-key-1": "0-label-value-1",
             "the-maximum-allowed-character-length-for-label-pairs-is-sixty-three":
@@ -62,12 +87,13 @@ class TestUtils(unittest.TestCase):
             return {'request': {'body': "content"}}
 
         # Check request actions
-        mock_request.post(self.url, json=_request_callback)
-        result = cromwell_tools.start_workflow(
-            self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file, self.user,
-            self.password, label=self.label)
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.headers.get('test'), 'header')
+        for auth_kwargs in auth_options:
+            mock_request.post(_get_url(auth_kwargs), json=_request_callback)
+            result = cromwell_tools.start_workflow(
+                self.wdl_file, self.inputs_file, self.options_file, self.inputs_file2,
+                self.zip_file, label=self.label, **auth_kwargs)
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(result.headers.get('test'), 'header')
 
     @requests_mock.mock()
     def test_start_workflow_retries_on_error(self, mock_request):
@@ -77,15 +103,16 @@ class TestUtils(unittest.TestCase):
             return {'status': 'error', 'message': 'Internal Server Error'}
 
         # Make the test complete faster by limiting the number of retries
-        cromwell_tools.start_workflow.retry.stop = stop_after_attempt(3)
+        cromwell_tools.start_workflow.retry.stop = stop_after_attempt(2)
 
         # Check request actions
-        mock_request.post(self.url, json=_request_callback)
-        with self.assertRaises(requests.HTTPError):
-            result = cromwell_tools.start_workflow(
-                self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
-                self.user, self.password, label=self.label)
-            self.assertNotEqual(mock_request.call_count, 1)
+        for auth_kwargs in auth_options:
+            mock_request.post(_get_url(auth_kwargs), json=_request_callback)
+            with self.assertRaises(requests.HTTPError):
+                _ = cromwell_tools.start_workflow(
+                    self.wdl_file, self.inputs_file, self.options_file, self.inputs_file2,
+                    self.zip_file, label=self.label, **auth_kwargs)
+                self.assertNotEqual(mock_request.call_count, 1)
 
         # Reset default retry value
         cromwell_tools.start_workflow.retry.stop = stop_after_delay(20)
@@ -94,21 +121,24 @@ class TestUtils(unittest.TestCase):
     @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
     def test_start_workflow_in_cromwell_as_a_service(self, mock_request, mock_header):
         mock_header.return_value = {"Authorization": "bearer fake_token"}
+
         def _request_callback(request, context):
             context.status_code = 200
             context.headers['test'] = 'header'
             return {'request': {'body': "content"}}
 
         # Check request actions
-        mock_request.post(self.url, json=_request_callback)
-        result = cromwell_tools.start_workflow(
-            self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
-            caas_key=self.caas_key, label=self.label)
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.headers.get('test'), 'header')
+        for auth_kwargs in auth_options:
+            mock_request.post(_get_url(auth_kwargs), json=_request_callback)
+            result = cromwell_tools.start_workflow(self.wdl_file, self.inputs_file, self.options_file,
+                                                   self.inputs_file2, self.zip_file, cromwell_url=self.url,
+                                                   caas_key=self.caas_key, label=self.label)
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(result.headers.get('test'), 'header')
 
     @requests_mock.mock()
     def test_get_workflow_statuses(self, mock_request):
+
         def _request_callback(request, context):
             context.status_code = 200
             context.headers['test'] = 'header'
@@ -120,10 +150,12 @@ class TestUtils(unittest.TestCase):
             return {'status': 'Succeeded'}
 
         ids = ["01234"]
-        mock_request.post(self.url, json=_request_callback)
-        mock_request.get(self.url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
-        result = cromwell_tools.get_workflow_statuses(ids, self.url, self.user, self.password)
-        self.assertIn('Succeeded', result)
+        for auth_kwargs in auth_options:
+            url = _get_url(auth_kwargs)
+            mock_request.post(url, json=_request_callback)
+            mock_request.get(url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
+            result = cromwell_tools.get_workflow_statuses(ids, **auth_kwargs)
+            self.assertIn('Succeeded', result)
 
     @requests_mock.mock()
     def test_get_workflow_metadata(self, mock_request):

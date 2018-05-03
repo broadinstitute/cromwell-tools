@@ -6,8 +6,8 @@ from cromwell_tools import cromwell_tools
 
 
 def _start_workflow(arguments):
-    user, password = cromwell_tools.harmonize_credentials(
-        arguments.secrets_file, arguments.username, arguments.password)
+    user, password, url = cromwell_tools.harmonize_credentials(
+        arguments.secrets_file, arguments.username, arguments.password, arguments.cromwell_url)
     wdl_file = cromwell_tools.download(arguments.wdl_file)
     inputs_json = cromwell_tools.download(arguments.inputs_json)
     try:
@@ -27,16 +27,11 @@ def _start_workflow(arguments):
     except AttributeError:
         inputs2_json = None
 
-    response = cromwell_tools.start_workflow(
-        wdl_file=wdl_file,
-        inputs_file=inputs_json,
-        inputs_file2=inputs2_json,
-        zip_file=dependencies_zip,
-        options_file=options_json,
-        url=arguments.cromwell_url + '/api/workflows/v1',
-        user=user,
-        password=password,
-    )
+    response = cromwell_tools.start_workflow(wdl_file=wdl_file, inputs_file=inputs_json,
+                                             options_file=options_json, inputs_file2=inputs2_json,
+                                             zip_file=dependencies_zip,
+                                             cromwell_url=url + '/api/workflows/v1',
+                                             cromwell_user=user, cromwell_password=password)
     response.raise_for_status()  # determine if workflow succeeded
     print(response.json()['id'])
 
@@ -51,18 +46,16 @@ def main(arguments=None):
     if arguments.command == 'run':
         _start_workflow(arguments)
     elif arguments.command == 'wait':
-        cromwell_tools.wait_until_workflow_completes(
-            cromwell_url=arguments.cromwell_url,
-            workflow_ids=arguments.workflow_ids,
-            timeout_minutes=arguments.timeout_minutes,
-            poll_interval_seconds=arguments.poll_interval_seconds,
-            cromwell_user=arguments.username,
-            cromwell_password=arguments.password,
-            secrets_file=arguments.secrets_file
-        )
+        cromwell_tools.wait_until_workflow_completes(workflow_ids=arguments.workflow_ids,
+                                                     timeout_minutes=arguments.timeout_minutes,
+                                                     poll_interval_seconds=arguments.poll_interval_seconds,
+                                                     cromwell_url=arguments.cromwell_url,
+                                                     cromwell_user=arguments.username,
+                                                     cromwell_password=arguments.password,
+                                                     secrets_file=arguments.secrets_file)
     elif arguments.command == 'status':
         user, password, url = cromwell_tools.harmonize_credentials(
-            arguments.secrets_file, arguments.username, arguments.password)
+            arguments.secrets_file, arguments.username, arguments.password, arguments.cromwell_url)
         cromwell_tools.get_workflow_statuses(
             ids=arguments.workflow_ids,
             cromwell_url=url,
@@ -109,7 +102,7 @@ if __name__ == '__main__':
     # cromwell url and security arguments apply to all sub-commands
     sub_commands = [run, wait, status, metadata]
     for p in sub_commands:
-        p.add_argument('-c', '--cromwell-url')
+        p.add_argument('-c', '--cromwell-url', default=None)
         p.add_argument('-u', '--username', default=None)
         p.add_argument('-p', '--password', default=None)
         p.add_argument('-s', '--secrets-file', default=None)
