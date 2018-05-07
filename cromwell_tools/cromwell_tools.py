@@ -318,7 +318,7 @@ def validate_cromwell_label(label_object):
     elif isinstance(label_object, bytes):
         label_object = json.loads(label_object.decode())
     elif isinstance(label_object, io.BytesIO):
-        label_object = json.loads(label_object.getvalue())
+        label_object = json.loads(label_object.getvalue().decode())
 
     for label_key, label_value in label_object.items():
         err_msg += _content_checker(_CROMWELL_LABEL_KEY_REGEX, label_key)
