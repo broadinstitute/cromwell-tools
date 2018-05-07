@@ -16,6 +16,8 @@ RUN pip install --upgrade pip
 
 RUN pip install wheel
 RUN pip install --upgrade setuptools
+RUN pip3 install wheel
+RUN pip3 install --upgrade setuptools
 
 COPY . .
 
