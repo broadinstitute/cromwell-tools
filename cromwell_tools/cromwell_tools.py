@@ -313,8 +313,10 @@ def validate_cromwell_label(label_object):
     """
     err_msg = ''
 
-    if isinstance(label_object, str) or isinstance(label_object, bytes):
+    if isinstance(label_object, str):
         label_object = json.loads(label_object)
+    elif isinstance(label_object, bytes):
+        label_object = json.loads(label_object.encode())
     elif isinstance(label_object, io.BytesIO):
         label_object = json.loads(label_object.getvalue())
 
