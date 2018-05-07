@@ -1,6 +1,9 @@
 Cromwell-tools
 ##############
 
+.. image:: https://quay.io/repository/broadinstitute/cromwell-tools/status
+    :target: https://quay.io/repository/broadinstitute/cromwell-tools
+    
 .. image:: https://travis-ci.org/broadinstitute/cromwell-tools.svg?branch=master
     :target: https://travis-ci.org/broadinstitute/cromwell-tools
 
