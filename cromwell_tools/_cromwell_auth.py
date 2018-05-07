@@ -1,7 +1,10 @@
 import json
+from collections import namedtuple
+
 import requests
 import requests.auth
 from oauth2client.service_account import ServiceAccountCredentials
+
 from ._cromwell_api import CromwellAPI
 
 
@@ -16,6 +19,18 @@ class CromwellAuth:
 
         :param dict header: authorization header
         """
+
+        self._validate_auth(header, auth)
+        self.header = header
+        self.auth = auth
+
+        self._validate_url(url)
+        self.url =url
+
+        self._validate_connection(self.header, self.auth, self.url)
+
+    @staticmethod
+    def _validate_auth(header, auth):
         if not header and not auth:
             raise ValueError("either header or auth must be passed")
 
@@ -24,22 +39,22 @@ class CromwellAuth:
                 raise TypeError('if passed, header must be a dict')
             if "Authorization" not in header.keys():
                 raise TypeError('the header must have an "Authorization" key')
-        self.header = header
 
-        # what is the type and what checks can be run?
-        self.auth = auth
-
-        if isinstance(url, str) and 'http' in url:
-            self.url = url
+    @staticmethod
+    def _validate_url(url):
+        if isinstance(url, str) and url.startswith('http'):
+            pass
         else:
-            raise ValueError("url must be an str that points to an http endpoint.")
+            raise ValueError("url must be an str that points to an http(s) endpoint.")
 
-        # todo might need to change this re: cyclical import
-        # todo the health API endpoint wants an instance of this class, not just the auth object.
-        # if not CromwellAPI.health(auth).status_code == 200:
-        #     raise AuthenticationError(
-        #         'Could not connect to Cromwell at {url} given provided credentials'.format(
-        #             url=url))
+    @staticmethod
+    def _validate_connection(header, auth, url):
+        dummy_auth = namedtuple('dummy_auth', ['header', 'auth', 'url'])
+        namespace = dummy_auth(header, auth, url)
+        if not CromwellAPI.health(namespace).status_code == 200:
+            raise AuthenticationError(
+                'Could not connect to Cromwell at {url} given provided credentials'.format(
+                    url=url))
 
     @classmethod
     def from_caas_key(cls, caas_key, url):
@@ -89,3 +104,4 @@ class CromwellAuth:
             return cls.from_secrets_file(secrets_file)
         if credentials["user_password"]:
             return cls.from_user_password(username, password, url)
+
