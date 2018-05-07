@@ -28,8 +28,8 @@ RUN python setup.py install
 RUN python3 setup.py install
 
 # download and expose womtool
-ADD https://github.com/broadinstitute/cromwell/releases/download/31/womtool-31.jar womtool-31.jar
-ENV WOMTOOL womtool-31.jar
+ADD https://github.com/broadinstitute/cromwell/releases/download/31/womtool-31.jar /usr/local/womtool/womtool-31.jar
+ENV WOMTOOL /usr/local/womtool/womtool-31.jar
 
 # install java 8
 ENV DEBIAN_FRONTEND noninteractive
