@@ -12,7 +12,7 @@ class WorkflowFailedException(Exception):
     pass
 
 
-class WorkFlowUnknownException(Exception):
+class WorkflowUnknownException(Exception):
     pass
 
 
