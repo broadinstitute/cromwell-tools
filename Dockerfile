@@ -9,6 +9,7 @@ RUN apt-get update && apt-get upgrade -y
 
 RUN apt-get -y install --no-install-recommends \
   python-pip \
+	python3-pip \
   git
 
 RUN pip install --upgrade pip
@@ -19,8 +20,10 @@ RUN pip install --upgrade setuptools
 COPY . .
 
 RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 RUN python setup.py install
+RUN python3 setup.py install
 
 # download and expose womtool
 ADD https://github.com/broadinstitute/cromwell/releases/download/31/womtool-31.jar womtool-31.jar
