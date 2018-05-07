@@ -21,8 +21,8 @@ RUN pip3 install --upgrade setuptools
 
 COPY . .
 
-RUN pip install -r requirements.txt
-RUN pip3 install -r requirements.txt
+RUN pip install -r requirements.txt -r test-requirements.txt
+RUN pip3 install -r requirements.txt -r test-requirements.txt
 
 RUN python setup.py install
 RUN python3 setup.py install
