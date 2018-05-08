@@ -17,7 +17,10 @@ class CromwellAuth:
     def __init__(self, url, header, auth):
         """Authentication Helper for a Cromwell Server
 
-        :param dict header: authorization header
+        Args:
+        url (str): Cromwell url
+        header (dict): authorization header
+        auth (str): authorization key
         """
 
         self._validate_auth(header, auth)
@@ -58,6 +61,13 @@ class CromwellAuth:
 
     @classmethod
     def from_caas_key(cls, caas_key, url):
+        """Generate an auth object from a CaaS key
+
+        Args:
+        caas_key (str): CaaS authentication key
+        url (str): Cromwell URL
+
+        """
         scopes = [
             'https://www.googleapis.com/auth/userinfo.profile',
             'https://www.googleapis.com/auth/userinfo.email'
@@ -68,6 +78,12 @@ class CromwellAuth:
 
     @classmethod
     def from_secrets_file(cls, secrets_file):
+        """Generate an auth object from a secrets json file
+
+        Args:
+        secrets_file (str): json file containing username, password, and url fields
+
+        """
         with open(secrets_file, 'r') as f:
             secrets = json.load(f)
         auth = requests.auth.HTTPBasicAuth(
@@ -79,6 +95,14 @@ class CromwellAuth:
 
     @classmethod
     def from_user_password(cls, username, password, url):
+        """Generate an auth object from a username, password, and url
+
+        Args:
+        username (str): cromwell username
+        password (str): cromwell password
+        url (str): cromwell URL
+
+        """
         auth = requests.auth.HTTPBasicAuth(username, password)
         return cls(url=url, header=None, auth=auth)
 

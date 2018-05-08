@@ -1,3 +1,7 @@
+"""
+TODO: add some module docs
+"""
+
 from datetime import datetime, timedelta
 import time
 
@@ -18,6 +22,21 @@ class WorkflowUnknownException(Exception):
 
 # todo functools partial for get, post (set the authenticate commands)
 class CromwellAPI:
+    """Contains a set of classmethods that implement interfaces to cromwell REST API endpoints
+
+    Methods:
+    status(uuid, auth, **kwargs)
+        get workflow status
+    health(auth, **kwargs)
+        get health of cromwell server
+    run(auth, wdl_file, inputs_json, options_json, inputs2_json, dependencies_json, ... )
+        run a new workflow
+    metadata(uuid, auth, **kwargs)
+        retrieve workflow metadata
+    wait(uuid, auth)
+        helper function that waits until workflow at uuid reaches a terminal status
+
+    """
 
     # todo remove this if it is not critical for mocking
     requests = requests
@@ -31,11 +50,30 @@ class CromwellAPI:
 
     @classmethod
     def status(cls, uuid, auth, **kwargs):
+        """Get workflow status
+
+        Args:
+        uuid (str): workflow identifier
+        auth (cromwell_tools._cromwell_auth.CromwellAuth): authentication class holding headers
+            or auth information to a Cromwell server
+
+        Returns:
+        requests.Response: HTTP response from cromwell
+        """
         return cls.requests.get(
             auth.url + cls._status_endpoint.format(uuid=uuid), auth=auth.auth, headers=auth.header)
 
     @classmethod
     def health(cls, auth, **kwargs):
+        """Get Cromwell health
+
+        Args:
+        auth (cromwell_tools._cromwell_auth.CromwellAuth): authentication class holding headers or
+            auth information to a Cromwell server
+
+        Returns:
+        requests.Response: HTTP response from cromwell
+        """
         return cls.requests.get(
             auth.url + cls._health_endpoint, auth=auth.auth, headers=auth.header)
 
@@ -48,19 +86,22 @@ class CromwellAPI:
 
         retry with exponentially increasing wait times if there are failure(s)
 
-        :param _io.BytesIO wdl_file: wdl file.
-        :param _io.BytesIO inputs_json: inputs file.
-        :param _io.BytesIO options_json: (optional) cromwell configs file.
-        :param _io.BytesIO inputs2_json: (optional) inputs file 2.
-        :param _io.BytesIO dependencies_json: (optional) zip file containing dependencies.
-        :param CromwellAuth auth: authentication to a cromwell instance
-        :param str collection_name: (optional) collection in SAM that the workflow should belong to.
-        :param str|_io.BytesIO label: (optional) JSON file containing a collection of key/value
-            pairs for workflow labels.
-        :param bool validate_labels: (optional) Whether to validate labels or not, using
-            cromwell-tools' built-in validators. It is set to True by default.
+        Args:
+        wdl_file (_io.BytesIO): wdl file containing the workflow to execute
+        inputs_json (_io.BytesIO): file-like object containing input data in json format
+        options_json (Optional[_io.BytesIO]): Cromwell configs file.
+        inputs2_json (Optional[_io.BytesIO]): Inputs file 2.
+        dependencies_json (Optional[_io.BytesIO]): Zip file containing dependencies.
+        auth (cromwell_tools._cromwell_auth.CromwellAuth): authentication class holding headers or
+            auth information to a Cromwell server
+        collection_name (Optional[str]): Collection in SAM that the workflow should belong to.
+        label (Optional[Union[str, _io.BytesIO]]): JSON file containing a collection of
+            key/value pairs for workflow labels.
+            # TODO verify these types are accurate
+        validate_labels (Optional[bool]) If True, validate cromwell labels (default False)
 
-        :return requests.Response response: HTTP response from cromwell.
+        Returns:
+        requests.Response: HTTP response from cromwell
         """
         manifest = prepare_workflow_manifest(
             wdl_file, inputs_json, dependencies_json, options_json, inputs2_json)
@@ -94,10 +135,16 @@ class CromwellAPI:
 
     @staticmethod
     def _parse_status(response):
-        """
+        """helper function to parse a status response
 
-        :param response:
-        :return:
+        Args:
+        response (requests.Response): status response from Cromwell
+
+        Raises:
+        WorkflowUnknownException: raised when Cromwell returns a status code != 200
+
+        Returns:
+        str: status response string
         """
         if response.status_code != 200:
             raise WorkFlowUnknownException(
@@ -110,18 +157,21 @@ class CromwellAPI:
     def wait(
             cls, workflow_ids, timeout_minutes, auth, poll_interval_seconds=30, verbose=True,
             **kwargs):
-        """ wait until cromwell returns successfully for each provided workflow
+        """Wait until cromwell returns successfully for each provided workflow
+
         Given a list of workflow ids, wait until cromwell returns successfully for each status, or
         one of the workflows fails or is aborted.
 
-        :param list workflow_ids:
-        :param int timeout_minutes:
-        :param int poll_interval_seconds: number of seconds between checks for workflow completion
-          (default 30)
-        :param CromwellAuth auth:
-        :param bool verbose:
+        Args:
+        workflow_ids (List): Workflow ids to wait for terminal status
+        timeout_minutes (int): Maximum number of minutes to wait
+        auth (cromwell_tools._cromwell_auth.CromwellAuth): Authentication class holding headers
+            or auth information to a Cromwell server
+        poll_interval_seconds (Optional[int]): Number of seconds between checks for workflow
+            completion (default 30)
+        verbose (Optional[bool]): If True, report to stdout when all workflows succeed
+            (default True)
 
-        :return:
         """
         start = datetime.now()
         timeout = timedelta(minutes=int(timeout_minutes))
@@ -148,6 +198,4 @@ class CromwellAPI:
                 return
 
             time.sleep(poll_interval_seconds)
-
-
 
