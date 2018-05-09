@@ -44,7 +44,7 @@ class CromwellAPI:
     _status_endpoint = '/api/workflows/v1/{uuid}/status'
     _workflow_endpoint = '/api/workflows/v1'
     _metadata_endpoint = '/api/workflows/v1/{uuid}/metadata'
-    _health_endpoint = '/api/engine/v1'
+    _health_endpoint = '/api/engine/v1/status'
 
     _failed_statuses = ['Failed', 'Aborted', 'Aborting']
 
