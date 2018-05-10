@@ -5,10 +5,15 @@ import zipfile
 import json
 from datetime import datetime, timedelta
 import time
-import requests
-from requests.auth import HTTPBasicAuth
-import six
 import re
+import tempfile
+import os
+import shutil
+from subprocess import Popen, PIPE
+
+from requests.auth import HTTPBasicAuth
+import requests
+import six
 from tenacity import retry, wait_exponential, stop_after_delay
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -312,10 +317,12 @@ def validate_cromwell_label(label_object):
     """
     err_msg = ''
 
-    if isinstance(label_object, str) or isinstance(label_object, bytes):
+    if isinstance(label_object, str):
         label_object = json.loads(label_object)
+    elif isinstance(label_object, bytes):
+        label_object = json.loads(label_object.decode())
     elif isinstance(label_object, io.BytesIO):
-        label_object = json.loads(label_object.getvalue())
+        label_object = json.loads(label_object.getvalue().decode())
 
     for label_key, label_value in label_object.items():
         err_msg += _content_checker(_CROMWELL_LABEL_KEY_REGEX, label_key)
@@ -334,3 +341,61 @@ def generate_auth_header_from_key_file(json_credentials):
     scopes = ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email']
     credentials = ServiceAccountCredentials.from_json_keyfile_name(json_credentials, scopes=scopes)
     return {"Authorization": "bearer " + credentials.get_access_token().access_token}
+
+
+def _localize_file(url, target_directory='.'):
+    """Localize file url to a directory. Supports local files and http endpoints
+
+    :param str url: url of local or http target
+    :param str target_directory: directory to localize file to
+    :return:
+    """
+
+    if not os.path.isdir(target_directory):
+        raise NotADirectoryError(
+            'target_directory must be a valid directory on the local filesystem')
+
+    basename = os.path.basename(url)
+    target_file = os.path.join(target_directory, basename)
+
+    if url.startswith('http'):
+        data = download_http(url)
+        with open(target_file, 'wb') as f:
+            f.write(data)
+    else:
+        if not os.path.isfile(url):
+            raise FileNotFoundError(
+                'non-http files must point to a valid file on the local filesystem. Not found: %s'
+                % url)
+        else:
+            shutil.copy(url, target_file)
+
+
+def validate_workflow(wdl, womtool_path, dependencies_json=None):
+    """Validate a wdl workflow using cromwell womtool
+
+    :param str wdl: link or filepath to wdl file
+    :param str womtool_path: path to womtool.jar
+    :param str dependencies_json: file path to json file containing dependencies
+    :return:
+    """
+    temporary_directory = tempfile.mkdtemp()
+
+    _localize_file(wdl, temporary_directory)
+    wdl_basename = os.path.basename(wdl)
+
+    if dependencies_json is not None:
+        with open(dependencies_json, 'r') as f:
+            depenencies_map = json.load(f)
+        for url in depenencies_map.values():
+            _localize_file(url, temporary_directory)
+
+    os.chdir(temporary_directory)
+    p = Popen(['java', '-jar', os.path.expanduser(womtool_path), 'validate', wdl_basename],
+              stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    if err:
+        raise ChildProcessError(err)
+    print('stdout:\n%s' % out.decode())
+
+
