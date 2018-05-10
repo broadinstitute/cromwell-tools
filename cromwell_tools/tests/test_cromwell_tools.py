@@ -239,8 +239,8 @@ class TestUtils(unittest.TestCase):
     def test_localize_file_https(self):
         temporary_directory = tempfile.mkdtemp()
         # grab this file from the master branch of the cromwell-tools repository
-        target = ('https://raw.githubusercontent.com/broadinstitute/cromwell-tools/master/'
-                  'cromwell_tools/tests/test_cromwell_tools.py')
+        target = ('https://raw.githubusercontent.com/broadinstitute/cromwell-tools/'
+                  'v0.3.1/cromwell_tools/tests/test_cromwell_tools.py')
         cromwell_tools._localize_file(target, temporary_directory)
         localized_file = os.path.join(temporary_directory, os.path.basename(target))
 
