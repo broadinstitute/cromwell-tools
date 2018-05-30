@@ -47,6 +47,7 @@ class TestUtils(unittest.TestCase):
         self.inputs_file2 = io.BytesIO(b"inputs_file2_content")
         self.options_file = io.BytesIO(b"options_file_content")
         self.label = io.BytesIO(b'{"test-label-key": "test-label-value"}')
+        self.on_hold = False
         self.url = "https://fake_url"
         self.user = "fake_user"
         self.password = "fake_password"
@@ -65,7 +66,7 @@ class TestUtils(unittest.TestCase):
         mock_request.post(self.url, json=_request_callback)
         result = cromwell_tools.start_workflow(
             self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file, self.user,
-            self.password, label=self.label)
+            self.password, label=self.label, on_hold=self.on_hold)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.headers.get('test'), 'header')
 
@@ -84,7 +85,7 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(requests.HTTPError):
             result = cromwell_tools.start_workflow(
                 self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
-                self.user, self.password, label=self.label)
+                self.user, self.password, label=self.label, on_hold=self.on_hold)
             self.assertNotEqual(mock_request.call_count, 1)
 
         # Reset default retry value
@@ -103,7 +104,7 @@ class TestUtils(unittest.TestCase):
         mock_request.post(self.url, json=_request_callback)
         result = cromwell_tools.start_workflow(
             self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
-            caas_key=self.caas_key, label=self.label)
+            caas_key=self.caas_key, label=self.label, on_hold=self.on_hold)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.headers.get('test'), 'header')
 
