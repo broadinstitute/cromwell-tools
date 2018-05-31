@@ -36,6 +36,7 @@ def _start_workflow(arguments):
         url=arguments.cromwell_url + '/api/workflows/v1',
         user=user,
         password=password,
+        on_hold=arguments.on_hold
     )
     response.raise_for_status()  # determine if workflow succeeded
     print(response.json()['id'])
@@ -111,6 +112,7 @@ if __name__ == '__main__':
     run.add_argument('--inputs-json', type=str, required=True)
     run.add_argument('--inputs2-json', type=str)
     run.add_argument('--options-file', type=str)
+    run.add_argument('--on-hold', type=str)
 
     # wait arguments
     wait.add_argument('--workflow-ids', nargs='+', required=True)

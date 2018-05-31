@@ -134,7 +134,7 @@ def wait_until_workflow_completes(
 @retry(reraise=True, wait=wait_exponential(multiplier=1, max=10), stop=stop_after_delay(20))
 def start_workflow(
         wdl_file, inputs_file, url, options_file=None, inputs_file2=None, zip_file=None, user=None,
-        password=None, caas_key=None, collection_name=None, label=None, validate_labels=True):
+        password=None, caas_key=None, collection_name=None, label=None, validate_labels=True, on_hold=False):
     """
     Use HTTP POST to start workflow in Cromwell and retry with exponentially increasing wait times between requests
     if there are any failures. View statistics about the retries with `start_workflow.retry.statistics`.
@@ -156,7 +156,8 @@ def start_workflow(
     :param str collection_name: (optional) collection in SAM that the workflow should belong to.
     :param str|_io.BytesIO label: (optional) JSON file containing a collection of key/value pairs for workflow labels.
     :param bool validate_labels: (optional) Whether to validate labels or not, using cromwell-tools' built-in
-     validators. It is set to True by default.
+                validators. It is set to True by default.
+    :param bool on_hold: (optional) Whether to submit the workflow in "On Hold" status.
 
     :return requests.Response response: HTTP response from cromwell.
     """
@@ -166,6 +167,7 @@ def start_workflow(
     files = {
         'workflowSource': wdl_file,
         'workflowInputs': inputs_file,
+        'workflowOnHold': json.dumps(on_hold)
     }
 
     if inputs_file2 is not None:
