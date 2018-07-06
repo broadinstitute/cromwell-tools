@@ -240,7 +240,7 @@ def query_workflows(cromwell_url, query_dict, cromwell_user=None, cromwell_passw
     :param str cromwell_password: HTTPBasicAuth password info for cromwell instance
     :param str secrets_file: Path to secret file stores the auth info for cromwell instance
     :param str caas_key: Path to service account JSON key for cromwell-as-a-service
-    :return list result: A list of query results.
+    :return result requests.Response response: HTTP response from cromwell.
     """
     auth, headers = _get_auth_credentials(secrets_file, cromwell_user, cromwell_password, caas_key)
     url = '{cromwell_url}/query'.format(cromwell_url=cromwell_url.strip('/'))
@@ -248,9 +248,7 @@ def query_workflows(cromwell_url, query_dict, cromwell_user=None, cromwell_passw
 
     response = requests.post(url, json=query_params, auth=auth, headers=headers)
     response.raise_for_status()
-
-    result = response.json().get('results')
-    return result
+    return response
 
 
 def download_to_map(urls):
