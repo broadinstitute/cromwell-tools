@@ -256,7 +256,7 @@ class TestUtils(unittest.TestCase):
 
         with self.assertRaises(requests.exceptions.HTTPError):
             cromwell_tools.release_workflow(self.url, self.workflow_id, cromwell_user=self.user,
-                                            cromwell_password=self.password)
+                                            cromwell_password=self.password).raise_for_status()
 
     @requests_mock.mock()
     @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')

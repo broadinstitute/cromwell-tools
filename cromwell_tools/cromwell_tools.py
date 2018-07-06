@@ -207,7 +207,6 @@ def release_workflow(cromwell_url, workflow_id, cromwell_user=None, cromwell_pas
     url = '{cromwell_url}/{id}/releaseHold'.format(cromwell_url=cromwell_url.strip('/'), id=workflow_id)
 
     response = requests.post(url, auth=auth, headers=headers)
-    response.raise_for_status()
     return response
 
 
@@ -247,7 +246,6 @@ def query_workflows(cromwell_url, query_dict, cromwell_user=None, cromwell_passw
     query_params = _compose_query_params(query_dict)
 
     response = requests.post(url, json=query_params, auth=auth, headers=headers)
-    response.raise_for_status()
     return response
 
 
