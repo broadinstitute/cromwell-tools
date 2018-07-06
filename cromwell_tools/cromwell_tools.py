@@ -223,7 +223,7 @@ def _compose_query_params(query_dict):
         if k in _CROMWELL_QUERY_KEYS:
             if k == 'label' and isinstance(v, dict):
                 query_params.extend([{'label': label_key + ':' + label_value} for label_key, label_value in v.items()])
-            if isinstance(v, list):
+            elif isinstance(v, list):
                 query_params.extend([{k: val} for val in set(v)])
             else:
                 query_params.append({k: v})

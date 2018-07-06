@@ -144,7 +144,7 @@ class TestUtils(unittest.TestCase):
             {'label': 'Comment:test'}
         ]
 
-        self.assertEqual(sorted(cromwell_tools._compose_query_params(query_dict)), sorted(expect_params))
+        self.assertCountEqual(cromwell_tools._compose_query_params(query_dict), expect_params)
 
     def test_compose_query_params_can_compose_nested_query_dicts(self):
         query_dict = {'status': ['Running', 'Failed', 'Submitted'],
