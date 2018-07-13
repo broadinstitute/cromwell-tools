@@ -26,6 +26,9 @@ _CROMWELL_LABEL_LENGTH = 63
 _CROMWELL_LABEL_KEY_REGEX = '[a-z]([-a-z0-9]*[a-z0-9])?'
 _CROMWELL_LABEL_VALUE_REGEX = '([a-z0-9]*[-a-z0-9]*[a-z0-9])?'
 
+_CROMWELL_QUERY_KEYS = {'additionalQueryResultFields', 'end', 'excludeLabelAnd', 'excludeLabelOr',
+                        'id', 'includeSubworkflows', 'label', 'labelor', 'name', 'start', 'status', 'submission'}
+
 
 def harmonize_credentials(secrets_file=None, cromwell_username=None, cromwell_password=None):
     """
@@ -184,6 +187,65 @@ def start_workflow(
     auth, headers = _get_auth_credentials(cromwell_user=user, cromwell_password=password, caas_key=caas_key)
     response = requests.post(url, files=files, auth=auth, headers=headers)
     response.raise_for_status()
+    return response
+
+
+def release_workflow(cromwell_url, workflow_id, cromwell_user=None, cromwell_password=None, secrets_file=None,
+                     caas_key=None):
+    """Release a workflow from on hold to submitted status.
+
+    :param str cromwell_url: cromwell url in a format of https://xxx.xxx.xxx/api/workflows/v1
+    :param str workflow_id: Workflow UUID.
+    :param str cromwell_user: HTTPBasicAuth user info for cromwell instance
+    :param str cromwell_password: HTTPBasicAuth password info for cromwell instance
+    :param str secrets_file: Path to secret file stores the auth info for cromwell instance
+    :param str caas_key: Path to service account JSON key for cromwell-as-a-service
+
+    :return requests.Response response: HTTP response from cromwell.
+    """
+    auth, headers = _get_auth_credentials(secrets_file, cromwell_user, cromwell_password, caas_key)
+    url = '{cromwell_url}/{id}/releaseHold'.format(cromwell_url=cromwell_url.strip('/'), id=workflow_id)
+
+    response = requests.post(url, auth=auth, headers=headers)
+    return response
+
+
+def _compose_query_params(query_dict):
+    """Compose the proper query parameters list from a dictionary for querying cromwell.
+
+    :param dict query_dict: A dictionary stores the query parameters. e.g. {'status': ['Failed', 'Running']}
+    :return list query_params: Proper query parameters list for querying cromwell, e.g. [{'status': 'Failed'},
+        {'status': 'Running'}, {'label': 'label1'}, {'label': 'label2'}].
+    """
+    query_params = []
+    for k, v in query_dict.items():
+        if k in _CROMWELL_QUERY_KEYS:
+            if k == 'label' and isinstance(v, dict):
+                query_params.extend([{'label': label_key + ':' + label_value} for label_key, label_value in v.items()])
+            elif isinstance(v, list):
+                query_params.extend([{k: val} for val in set(v)])
+            else:
+                query_params.append({k: v})
+    return query_params
+
+
+def query_workflows(cromwell_url, query_dict, cromwell_user=None, cromwell_password=None, secrets_file=None,
+                     caas_key=None):
+    """Query for workflows which match various criteria.
+
+    :param str cromwell_url: cromwell url in a format of https://xxx.xxx.xxx/api/workflows/v1
+    :param dict query_dict: A dictionary stores the query parameters. e.g. {'status': ['Failed', 'Running']}
+    :param str cromwell_user: HTTPBasicAuth user info for cromwell instance
+    :param str cromwell_password: HTTPBasicAuth password info for cromwell instance
+    :param str secrets_file: Path to secret file stores the auth info for cromwell instance
+    :param str caas_key: Path to service account JSON key for cromwell-as-a-service
+    :return result requests.Response response: HTTP response from cromwell.
+    """
+    auth, headers = _get_auth_credentials(secrets_file, cromwell_user, cromwell_password, caas_key)
+    url = '{cromwell_url}/query'.format(cromwell_url=cromwell_url.strip('/'))
+    query_params = _compose_query_params(query_dict)
+
+    response = requests.post(url, json=query_params, auth=auth, headers=headers)
     return response
 
 
@@ -399,5 +461,3 @@ def validate_workflow(wdl, womtool_path, dependencies_json=None):
     if err:
         raise ChildProcessError(err)
     print('stdout:\n%s' % out.decode())
-
-
