@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import io
 import zipfile
+import tempfile
 import os
 import json
-import tempfile
 
 from tenacity import stop_after_delay, stop_after_attempt
 import requests
 import requests_mock
 import unittest
-
 try:
     # if python3
     import unittest.mock as mock
@@ -20,13 +19,36 @@ except ImportError:
 from cromwell_tools import cromwell_tools
 
 
+
+# set up authentication options for the tests
+temp_dir = tempfile.mkdtemp()
+secrets_file = temp_dir + 'fake_secrets.json'
+username = "fake_user"
+password = "fake_password"
+url = "https://fake_url"
+caas_key = "path/fake_key.json"
+auth = {
+    "cromwell_url": url,
+    "cromwell_user": username,
+    "cromwell_password": password
+}
+with open(secrets_file, 'w') as f:
+    json.dump(auth, f)
+
+auth_options = (
+    cromwell_tools.CromwellAuth.harmonize_credentials(**auth),
+    cromwell_tools.CromwellAuth.harmonize_credentials(**{"secrets_file": secrets_file}),
+    cromwell_tools.CromwellAuth.harmonize_credentials(**{"caas_key": caas_key, "cromwell_url": url})
+)
+
+
 class TestUtils(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         # Change to test directory, as tests may have been invoked from another dir
-        dir = os.path.abspath(os.path.dirname(__file__))
-        os.chdir(dir)
+        dir_ = os.path.abspath(os.path.dirname(__file__))
+        os.chdir(dir_)
         cls.invalid_labels = {
             "0-label-key-1": "0-label-value-1",
             "the-maximum-allowed-character-length-for-label-pairs-is-sixty-three":
@@ -49,236 +71,54 @@ class TestUtils(unittest.TestCase):
         self.inputs_file2 = io.BytesIO(b"inputs_file2_content")
         self.options_file = io.BytesIO(b"options_file_content")
         self.label = io.BytesIO(b'{"test-label-key": "test-label-value"}')
-        self.on_hold = False
-        self.url = "https://fake_url"
-        self.user = "fake_user"
-        self.password = "fake_password"
-        self.caas_key = "path/fake_key.json"
-        self.workflow_id = "xxx-xxx-xxx-id"
 
-    @requests_mock.mock()
-    def test_query_workflows_returns_200(self, mock_request):
-        def _request_callback(request, context):
-            context.status_code = 200
-            context.headers['test'] = 'header'
-            return {
-                'results': [
-                    {'name': 'workflow1',
-                     'submission': 'submission1',
-                     'id': 'id1',
-                     'status': 'Failed',
-                     'start': 'start1',
-                     'end': 'end1'},
-                    {'name': 'workflow2',
-                     'submission': 'submission2',
-                     'id': 'id2',
-                     'status': 'Running',
-                     'start': 'start2',
-                     'end': 'end2'}
-                ],
-                'totalResultsCount': 2}
-
-        mock_request.post('{}/query'.format(self.url), json=_request_callback)
-
-        query_dict = {
-            'status': ['Running', 'Failed'],
-            'label': {
-                'label_key1': 'label_value1',
-                'label_key2': 'label_value2'
-            }
-        }
-        result = cromwell_tools.query_workflows(self.url, query_dict, cromwell_user=self.user,
-                                                cromwell_password=self.password)
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.json()['totalResultsCount'], 2)
+    def _start_workflows(self, cromwell_auth, mock_request, _request_callback):
+        mock_request.post(cromwell_auth.url + '/api/workflows/v1', json=_request_callback)
+        return cromwell_tools.start_workflow(
+            self.wdl_file, self.inputs_file, cromwell_auth, self.options_file,
+            self.inputs_file2, self.zip_file, label=self.label)
 
     @requests_mock.mock()
     @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
-    def test_query_workflows_returns_200_in_cromwell_as_a_service(self, mock_request, mock_header):
-        mock_header.return_value = {"Authorization": "bearer fake_token"}
-
-        def _request_callback(request, context):
-            context.status_code = 200
-            context.headers['test'] = 'header'
-            return {
-                'results': [
-                    {'name': 'workflow1',
-                     'submission': 'submission1',
-                     'id': 'id1',
-                     'status': 'Failed',
-                     'start': 'start1',
-                     'end': 'end1'},
-                    {'name': 'workflow2',
-                     'submission': 'submission2',
-                     'id': 'id2',
-                     'status': 'Running',
-                     'start': 'start2',
-                     'end': 'end2'}
-                ],
-                'totalResultsCount': 2}
-
-        mock_request.post('{}/query'.format(self.url), json=_request_callback)
-
-        query_dict = {
-            'status': ['Running', 'Failed'],
-            'label': {
-                'label_key1': 'label_value1',
-                'label_key2': 'label_value2'
-            }
-        }
-        result = cromwell_tools.query_workflows(self.url, query_dict, caas_key=self.caas_key)
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.json()['totalResultsCount'], 2)
-
-    def test_compose_query_params_can_compose_simple_query_dicts(self):
-        query_dict = {'status': 'Running',
-                      'start': '2018-01-01T00:00:00.000Z',
-                      'end': '2018-01-01T12:00:00.000Z',
-                      'label': {'Comment': 'test'}
-                      }
-
-        expect_params = [
-            {'status': 'Running'},
-            {'start': '2018-01-01T00:00:00.000Z'},
-            {'end': '2018-01-01T12:00:00.000Z'},
-            {'label': 'Comment:test'}
-        ]
-
-        self.assertCountEqual(cromwell_tools._compose_query_params(query_dict), expect_params)
-
-    def test_compose_query_params_can_compose_nested_query_dicts(self):
-        query_dict = {'status': ['Running', 'Failed', 'Submitted'],
-                      'start': '2018-01-01T00:00:00.000Z',
-                      'end': '2018-01-01T12:00:00.000Z',
-                      'label': {'Comment1': 'test1',
-                                'Comment2': 'test2',
-                                'Comment3': 'test3'}
-                      }
-
-        expect_params = [
-            {'status': 'Running'},
-            {'status': 'Failed'},
-            {'status': 'Submitted'},
-            {'start': '2018-01-01T00:00:00.000Z'},
-            {'end': '2018-01-01T12:00:00.000Z'},
-            {'label': 'Comment1:test1'},
-            {'label': 'Comment2:test2'},
-            {'label': 'Comment3:test3'}
-        ]
-        self.assertCountEqual(cromwell_tools._compose_query_params(query_dict), expect_params)
-
-    @requests_mock.mock()
-    def test_start_workflow(self, mock_request):
+    def test_start_workflow(self, mock_request, mock_header):
         """Unit test using mocks
         """
+        mock_header.return_value = {"Authorization": "bearer fake_token"}
 
         def _request_callback(request, context):
             context.status_code = 200
             context.headers['test'] = 'header'
             return {'request': {'body': "content"}}
 
-        # Check request actions
-        mock_request.post(self.url, json=_request_callback)
-        result = cromwell_tools.start_workflow(
-            self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file, self.user,
-            self.password, label=self.label, on_hold=self.on_hold)
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.headers.get('test'), 'header')
+        for cromwell_auth in auth_options:
+            result = self._start_workflows(cromwell_auth, mock_request, _request_callback)
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(result.headers.get('test'), 'header')
 
     @requests_mock.mock()
     def test_start_workflow_retries_on_error(self, mock_request):
+
         def _request_callback(request, context):
             context.status_code = 500
             context.headers['test'] = 'header'
             return {'status': 'error', 'message': 'Internal Server Error'}
 
         # Make the test complete faster by limiting the number of retries
-        cromwell_tools.start_workflow.retry.stop = stop_after_attempt(3)
+        cromwell_tools.start_workflow.retry.stop = stop_after_attempt(2)
 
         # Check request actions
-        mock_request.post(self.url, json=_request_callback)
-        with self.assertRaises(requests.HTTPError):
-            result = cromwell_tools.start_workflow(
-                self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
-                self.user, self.password, label=self.label, on_hold=self.on_hold)
-            self.assertNotEqual(mock_request.call_count, 1)
+        for cromwell_auth in auth_options:
+            with self.assertRaises(requests.HTTPError):
+                _ = self._start_workflows(cromwell_auth, mock_request, _request_callback)
+                self.assertEqual(mock_request.call_count, 2)
 
         # Reset default retry value
         cromwell_tools.start_workflow.retry.stop = stop_after_delay(20)
 
     @requests_mock.mock()
     @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
-    def test_start_workflow_in_cromwell_as_a_service(self, mock_request, mock_header):
-        mock_header.return_value = {"Authorization": "bearer fake_token"}
+    def test_get_workflow_statuses(self, mock_request, mock_header):
 
-        def _request_callback(request, context):
-            context.status_code = 200
-            context.headers['test'] = 'header'
-            return {'request': {'body': "content"}}
-
-        # Check request actions
-        mock_request.post(self.url, json=_request_callback)
-        result = cromwell_tools.start_workflow(
-            self.wdl_file, self.inputs_file, self.url, self.options_file, self.inputs_file2, self.zip_file,
-            caas_key=self.caas_key, label=self.label, on_hold=self.on_hold)
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.headers.get('test'), 'header')
-
-    @requests_mock.mock()
-    def test_release_workflow_returns_200(self, mock_request):
-        def _request_callback(request, context):
-            context.status_code = 200
-            context.headers['test'] = 'header'
-            return {
-                'id': request.url.split('/')[-2],
-                'status': 'Submitted'
-            }
-
-        mock_request.post('{0}/{1}/releaseHold'.format(self.url, self.workflow_id), json=_request_callback)
-        result = cromwell_tools.release_workflow(self.url, self.workflow_id, cromwell_user=self.user,
-                                                 cromwell_password=self.password)
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.json()['id'], self.workflow_id)
-        self.assertEqual(result.json()['status'], 'Submitted')
-
-    @requests_mock.mock()
-    def test_release_workflow_that_is_not_on_hold_returns_error(self, mock_request):
-        def _request_callback(request, context):
-            context.status_code = 403
-            context.headers['test'] = 'header'
-            return {
-                'status': 'error',
-                'message': 'Couldn\'t change status of workflow {} to \'Submitted\' because the workflow is not in \'On Hold\' state'.format(
-                    request.url.split('/')[-2])
-            }
-
-        mock_request.post('{0}/{1}/releaseHold'.format(self.url, self.workflow_id), json=_request_callback)
-
-        with self.assertRaises(requests.exceptions.HTTPError):
-            cromwell_tools.release_workflow(self.url, self.workflow_id, cromwell_user=self.user,
-                                            cromwell_password=self.password).raise_for_status()
-
-    @requests_mock.mock()
-    @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
-    def test_release_workflow_returns_200_in_cromwell_as_a_service(self, mock_request, mock_header):
-        mock_header.return_value = {"Authorization": "bearer fake_token"}
-
-        def _request_callback(request, context):
-            context.status_code = 200
-            context.headers['test'] = 'header'
-            return {
-                'id': request.url.split('/')[-2],
-                'status': 'Submitted'
-            }
-
-        mock_request.post('{0}/{1}/releaseHold'.format(self.url, self.workflow_id), json=_request_callback)
-        result = cromwell_tools.release_workflow(self.url, self.workflow_id, caas_key=self.caas_key)
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.json()['id'], self.workflow_id)
-        self.assertEqual(result.json()['status'], 'Submitted')
-
-    @requests_mock.mock()
-    def test_get_workflow_statuses(self, mock_request):
         def _request_callback(request, context):
             context.status_code = 200
             context.headers['test'] = 'header'
@@ -290,10 +130,11 @@ class TestUtils(unittest.TestCase):
             return {'status': 'Succeeded'}
 
         ids = ["01234"]
-        mock_request.post(self.url, json=_request_callback)
-        mock_request.get(self.url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
-        result = cromwell_tools.get_workflow_statuses(ids, self.url, self.user, self.password)
-        self.assertIn('Succeeded', result)
+        for cromwell_auth in auth_options:
+            mock_request.post(cromwell_auth.url, json=_request_callback)
+            mock_request.get(cromwell_auth.url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
+            result = cromwell_tools.get_workflow_statuses(ids, cromwell_auth)
+            self.assertIn('Succeeded', result)
 
     @requests_mock.mock()
     @mock.patch('cromwell_tools.cromwell_tools.generate_auth_header_from_key_file')
@@ -405,55 +246,6 @@ class TestUtils(unittest.TestCase):
 
     def test_validate_cromwell_label_on_valid_labels_bytes_object(self):
         self.assertIsNone(cromwell_tools.validate_cromwell_label(json.dumps(self.valid_labels).encode('utf-8')))
-
-    def test_localize_file_https(self):
-        temporary_directory = tempfile.mkdtemp()
-        # grab this file from the master branch of the cromwell-tools repository
-        target = ('https://raw.githubusercontent.com/broadinstitute/cromwell-tools/'
-                  'v0.3.1/cromwell_tools/tests/test_cromwell_tools.py')
-        cromwell_tools._localize_file(target, temporary_directory)
-        localized_file = os.path.join(temporary_directory, os.path.basename(target))
-
-        # verify the file was downloaded and that it contains some content we expect
-        assert os.path.isfile(localized_file)
-        with open(localized_file, 'r') as f:
-            assert 'cromwell_tools' in f.read()
-
-
-class TestValidate(unittest.TestCase):
-
-    def test_localize_file(self):
-        temporary_directory = tempfile.mkdtemp()
-
-        # test that we can localize both local and https files. Use this file as a convenient target
-        targets = [
-            'https://raw.githubusercontent.com/broadinstitute/cromwell-tools/master/'
-            'cromwell_tools/tests/test_cromwell_tools.py',
-            __file__
-        ]
-        for target in targets:
-            cromwell_tools._localize_file(target, temporary_directory)
-            localized_file = os.path.join(temporary_directory, os.path.basename(target))
-
-            # verify the file was localized and that it contains some expected content
-            assert os.path.isfile(localized_file)
-            with open(localized_file, 'r') as f:
-                assert 'cromwell_tools' in f.read()
-            os.remove(localized_file)
-
-    def test_validate_wdl(self):
-        # change dir so we can leverage relative paths to data
-        cwd = os.getcwd()
-        test_directory = os.path.dirname(__file__)
-        os.chdir(test_directory)
-
-        womtool = os.environ['WOMTOOL']
-        wdl = 'data/test_workflow.wdl'
-        dependencies_json = 'data/test_dependencies.json'
-        cromwell_tools.validate_workflow(wdl, womtool, dependencies_json)
-
-        # put the directory back how we found it
-        os.chdir(cwd)
 
 
 if __name__ == '__main__':

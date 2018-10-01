@@ -27,11 +27,11 @@ setup(
     license='BSD 3-clause "New" or "Revised" License',
     packages=['cromwell_tools'],
     install_requires=[
-        'requests>=2.18.4',
+        'requests>=2.19.1',
         'six>=1.11.0',
         'oauth2client>=4.1.2',
         'tenacity>=4.10.0',
-        'setuptools_scm>=2.0.0'
+        'setuptools_scm>=3.1.0'
     ],
     scripts=['cromwell_tools/scripts/cromwell-tools'],
     include_package_data=True

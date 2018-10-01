@@ -32,10 +32,23 @@ Install it like this:
 Usage
 =====
 
+Python API
+----------
+The rest of the package consists of scripts that are meant to be invoked from the command line.
+
+In Python, you can then import the package with:
+
+.. code:: python
+
+    import cromwell_tools.api as cwt
+    cwt.submit(*args)
+
+assuming args is a list of arguments needed.
+
 Commandline Interface
 ---------------------
 
-This package installs a command line interface, which is used as follows:
+This package also installs a command line interface that mirrors the API and is used as follows:
 
 .. code::
 
@@ -124,19 +137,6 @@ Sub-commands to start, wait for completion, and determining status of jobs are e
       -s SECRETS_FILE, --secrets-file SECRETS_FILE
       --workflow-ids WORKFLOW_IDS [WORKFLOW_IDS ...]
 
-Python API
-----------
-The rest of the package consists of scripts that are meant to be invoked from the command line.
-
-In Python, you can then import the package with:
-
-.. code:: python
-
-    from cromwell_tools import cromwell_tools
-    cromwell_tools.start_workflow(*args)
-
-assuming args is a list of arguments needed.
-
 Testing
 =======
 
@@ -155,6 +155,6 @@ Then, from the root of the cromwell-tools repo, do:
 
 .. code::
 
-    python -m unittest discover -v
+    python -m pytest --cov=cromwell_tools
 
 This runs all the tests in the cromwell_tools package.
