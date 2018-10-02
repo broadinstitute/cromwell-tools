@@ -11,4 +11,9 @@ except DistributionNotFound:
     # package is not installed
     pass
 
-from .cromwell_api import CromwellAPI as api
+# By using the below import statement when you call import cromwell_tools you get:
+# cromwell_tools.api.status
+# cromwell_tools.api.metadata
+# cromwell_tools.api.run
+# ...
+from cromwell_tools._cromwell_api import CromwellAPI as api
