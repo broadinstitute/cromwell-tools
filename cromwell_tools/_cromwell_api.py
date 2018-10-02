@@ -110,6 +110,7 @@ class CromwellAPI(object):
         """Submits a workflow to Cromwell.
 
         This function has retry policy with exponentially increasing wait times if there are failure(s).
+        # TODO: Allow more inputs files rather 2 to be consistent with the Cromwell API
 
         Args:
             wdl_file (_io.BytesIO or str): The workflow source file to submit for execution. From version 35,
