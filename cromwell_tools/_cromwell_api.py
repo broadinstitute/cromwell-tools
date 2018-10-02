@@ -24,7 +24,7 @@ class WorkflowUnknownException(Exception):
     pass
 
 
-# todo functools partial for get, post (set the authenticate commands)
+# TODO: use functools partial for get, post (set the authenticate commands)
 class CromwellAPI(object):
     """Contains a set of classmethods that implement interfaces to cromwell REST API endpoints.
     """
