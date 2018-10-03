@@ -56,77 +56,108 @@ class CromwellAPI(object):
     _cromwell_query_keys = _cromwell_exclusive_query_keys.union(_cromwell_inclusive_query_keys)
 
     @classmethod
-    def abort(cls, uuid, auth):
+    def abort(cls, uuid, auth, raise_for_status=False):
         """Request Cromwell to abort a running workflow by UUID.
 
         Args:
             uuid (str): A Cromwell workflow UUID, which is the workflow identifier.
             auth (cromwell_tools._cromwell_auth.CromwellAuth): The authentication class holding headers or auth
                 information to a Cromwell server.
+            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
+                False)
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
+                a response that satisfies 400 <= response.status_code < 600.
+
         Returns:
             requests.Response: HTTP response from Cromwell.
         """
-        return cls.requests.post(url=auth.url + cls._abort_endpoint.format(uuid=uuid),
+        response = cls.requests.post(url=auth.url + cls._abort_endpoint.format(uuid=uuid),
                                  auth=auth.auth,
                                  headers=auth.header)
 
+        if raise_for_status:
+            cls._check_and_raise_status(response)
+        return response
+
     @classmethod
-    def status(cls, uuid, auth):
+    def status(cls, uuid, auth, raise_for_status=False):
         """Retrieves the current state for a workflow by UUID.
 
         Args:
             uuid (str): A Cromwell workflow UUID, which is the workflow identifier.
             auth (cromwell_tools._cromwell_auth.CromwellAuth): The authentication class holding headers or auth
                 information to a Cromwell server.
+            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
+                False)
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
+                a response that satisfies 400 <= response.status_code < 600.
 
         Returns:
             requests.Response: HTTP response from Cromwell.
         """
-        return cls.requests.get(url=auth.url + cls._status_endpoint.format(uuid=uuid),
+        response = cls.requests.get(url=auth.url + cls._status_endpoint.format(uuid=uuid),
                                 auth=auth.auth,
                                 headers=auth.header)
 
+        if raise_for_status:
+            cls._check_and_raise_status(response)
+        return response
+
     @classmethod
-    def health(cls, auth):
+    def health(cls, auth, raise_for_status=False):
         """Return the current health status of any monitored subsystems of the Cromwell Server.
 
         Args:
             auth (cromwell_tools._cromwell_auth.CromwellAuth): authentication class holding headers or auth
                 information to a Cromwell server.
+            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
+                False)
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
+                a response that satisfies 400 <= response.status_code < 600.
 
         Returns:
             requests.Response: HTTP response from Cromwell.
         """
-        return cls.requests.get(url=auth.url + cls._health_endpoint,
+        response = cls.requests.get(url=auth.url + cls._health_endpoint,
                                 auth=auth.auth,
                                 headers=auth.header)
 
+        if raise_for_status:
+            cls._check_and_raise_status(response)
+        return response
+
     @classmethod
-    @retry(reraise=True,
-           wait=wait_exponential(multiplier=1, max=10),
-           stop=stop_after_delay(20))
     def submit(cls, auth, wdl_file, inputs_json, options_json=None, inputs2_json=None, dependencies_json=None,
-               collection_name=None, label=None, validate_labels=True, **kwargs):
+               collection_name=None, label=None, validate_labels=True, raise_for_status=False, **kwargs):
         """Submits a workflow to Cromwell.
 
-        This function has retry policy with exponentially increasing wait times if there are failure(s).
         # TODO: Allow more inputs files rather 2 to be consistent with the Cromwell API
 
         Args:
             wdl_file (_io.BytesIO or str): The workflow source file to submit for execution. From version 35,
-            Cromwell starts
-                to accept URL to the WDL file besides actual WDL files.
+                Cromwell starts to accept URL to the WDL file besides actual WDL files.
             inputs_json (_io.BytesIO): File-like object containing input data in JSON format.
             options_json (Optional[_io.BytesIO]): Cromwell configs file.
             inputs2_json (Optional[_io.BytesIO]): Inputs file 2.
             dependencies_json (Optional[_io.BytesIO]): Zip file containing dependencies.
             auth (cromwell_tools._cromwell_auth.CromwellAuth): authentication class holding headers or
-                auth information to a Cromwell server
+                auth information to a Cromwell server.
             collection_name (Optional[str]): Collection in SAM that the workflow should belong to.
             label (Optional[Union[str, _io.BytesIO]]): JSON file containing a collection of
-                key/value pairs for workflow labels.
-                # TODO verify these types are accurate
-            validate_labels (Optional[bool]) If True, validate cromwell labels (default False)
+                key/value pairs for workflow labels. # TODO: verify these types are accurate
+            validate_labels (Optional[bool]) If True, validate cromwell labels. (default False)
+            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
+                False)
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
+                a response that satisfies 400 <= response.status_code < 600.
 
         Returns:
             requests.Response: HTTP response from Cromwell.
@@ -152,15 +183,16 @@ class CromwellAPI(object):
 
         if label:
             files['labels'] = label
-        if collection_name:  # todo this check should happen elsewhere, related to caas
+        if collection_name:  # TODO: this check should happen elsewhere, related to caas
             files['collectionName'] = collection_name
 
         response = cls.requests.post(url=auth.url + cls._workflow_endpoint,
                                      files=files,
                                      auth=auth.auth,
                                      headers=auth.header)
-        response.raise_for_status()
 
+        if raise_for_status:
+            cls._check_and_raise_status(response)
         return response
 
     @classmethod
@@ -179,7 +211,6 @@ class CromwellAPI(object):
             completion (default 30)
         verbose (Optional[bool]): If True, report to stdout when all workflows succeed
             (default True)
-
         """
         start = datetime.now()
         timeout = timedelta(minutes=int(timeout_minutes))
@@ -208,7 +239,7 @@ class CromwellAPI(object):
             time.sleep(poll_interval_seconds)
 
     @classmethod
-    def release_hold(cls, uuid, auth):
+    def release_hold(cls, uuid, auth, raise_for_status=False):
         """Request Cromwell to release the hold on a workflow.
 
         It will switch the status of a workflow from ‘On Hold’ to ‘Submitted’ so it can be picked for running. For
@@ -219,18 +250,25 @@ class CromwellAPI(object):
                 `On Hold` status.
             auth (cromwell_tools._cromwell_auth.CromwellAuth): The authentication class holding headers or auth
                 information to a Cromwell server.
+            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
+                False)
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
+                a response that satisfies 400 <= response.status_code < 600.
 
         Returns:
             response (requests.Response): HTTP response from Cromwell.
-
         """
         response = cls.requests.post(url=auth.url + cls._release_hold_endpoint.format(uuid=uuid),
                                      auth=auth.auth,
                                      headers=auth.header)
+        if raise_for_status:
+            cls._check_and_raise_status(response)
         return response
 
     @classmethod
-    def query(cls, query_dict, auth):
+    def query(cls, query_dict, auth, raise_for_status=False):
         """
         TODO: Given that Cromwell-as-a-Service blocks a set of features that are available in Cromwell, e.g. 'labelor',
         for security concerns, the first iteration of this API doesn't come up with the advanced query keys of the
@@ -242,19 +280,27 @@ class CromwellAPI(object):
         workflows that in either `Succeeded` or `Failed` statuses.
 
         Args:
-            query_dict:
+            query_dict (dict): A dictionary representing the query key-value paris. The keys should be accepted by the
+                Cromwell or they will get ignored. The values could be str, list or dict.
             auth (cromwell_tools._cromwell_auth.CromwellAuth): The authentication class holding headers or auth
                 information to a Cromwell server.
+            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
+                False)
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
+                a response that satisfies 400 <= response.status_code < 600.
 
         Returns:
             response (requests.Response): HTTP response from Cromwell.
-
         """
         query_params = cls._compose_query_params(query_dict)
         response = cls.requests.post(url=auth.url + cls._query_endpoint,
                                      json=query_params,
                                      auth=auth.auth,
                                      headers=auth.header)
+        if raise_for_status:
+            cls._check_and_raise_status(response)
         return response
 
     @classmethod
@@ -311,8 +357,11 @@ class CromwellAPI(object):
             query_dict (dict): A dictionary representing the query key-value paris. The keys should be accepted by the
                 Cromwell or they will get ignored. The values could be str, list or dict.
 
+        Raises:
+            TypeError: If the input query_dict is not a dictionary.
+            ValueError: If a list of values are assigned to a query key that belongs to _cromwell_exclusive_query_keys.
         Returns:
-            query_params (List[dict]): A composed lsit of query objects.
+            query_params (List[dict]): A composed list of query objects.
         """
         if not isinstance(query_dict, dict):
             raise TypeError('A valid dictionary with query keys is required!')
@@ -357,3 +406,20 @@ class CromwellAPI(object):
                             response.status_code))
         else:
             return response.json()['status']
+
+    @staticmethod
+    def _check_and_raise_status(response):
+        """Helper function to check the status of a response and raise a friendly message if there are errors.
+
+        This functions is using the `response.ok` which wraps the `raise_for_status()`, by doing this, we can
+        produce the actual error messages from the Cromwell, instead of shadowing them with `raise_for_status()`.
+
+        Args:
+            response (requests.Response): A status response object from Cromwell.
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when Cromwell returns a response that satisfies
+                400 <= response.status_code < 600.
+        """
+        if not response.ok:
+            raise requests.exceptions.HTTPError('Error Code {0}: {1}'.format(response.status_code, response.text))
