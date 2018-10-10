@@ -74,8 +74,8 @@ class CromwellAPI(object):
             requests.Response: HTTP response from Cromwell.
         """
         response = cls.requests.post(url=auth.url + cls._abort_endpoint.format(uuid=uuid),
-                                 auth=auth.auth,
-                                 headers=auth.header)
+                                     auth=auth.auth,
+                                     headers=auth.header)
 
         if raise_for_status:
             cls._check_and_raise_status(response)
@@ -100,8 +100,8 @@ class CromwellAPI(object):
             requests.Response: HTTP response from Cromwell.
         """
         response = cls.requests.get(url=auth.url + cls._status_endpoint.format(uuid=uuid),
-                                auth=auth.auth,
-                                headers=auth.header)
+                                    auth=auth.auth,
+                                    headers=auth.header)
 
         if raise_for_status:
             cls._check_and_raise_status(response)
@@ -125,19 +125,22 @@ class CromwellAPI(object):
             requests.Response: HTTP response from Cromwell.
         """
         response = cls.requests.get(url=auth.url + cls._health_endpoint,
-                                auth=auth.auth,
-                                headers=auth.header)
+                                    auth=auth.auth,
+                                    headers=auth.header)
 
         if raise_for_status:
             cls._check_and_raise_status(response)
         return response
 
     @classmethod
+    @retry(reraise=True, wait=wait_exponential(multiplier=1, max=10), stop=stop_after_delay(20))
     def submit(cls, auth, wdl_file, inputs_json, options_json=None, inputs2_json=None, dependencies_json=None,
-               collection_name=None, label=None, validate_labels=True, raise_for_status=False, **kwargs):
+               collection_name=None, label=None, validate_labels=False):
         """Submits a workflow to Cromwell.
 
         # TODO: Allow more inputs files rather 2 to be consistent with the Cromwell API
+        # TODO: Add `raise_for_status` flag to this method and remove the hard-coded `raise_for_status()` call
+        # TODO: Purifying the methods by taking the specific retry policy out from this method
 
         Args:
             wdl_file (_io.BytesIO or str): The workflow source file to submit for execution. From version 35,
@@ -152,8 +155,6 @@ class CromwellAPI(object):
             label (Optional[Union[str, _io.BytesIO]]): JSON file containing a collection of
                 key/value pairs for workflow labels. # TODO: verify these types are accurate
             validate_labels (Optional[bool]) If True, validate cromwell labels. (default False)
-            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
-                False)
 
         Raises:
             requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
@@ -191,8 +192,7 @@ class CromwellAPI(object):
                                      auth=auth.auth,
                                      headers=auth.header)
 
-        if raise_for_status:
-            cls._check_and_raise_status(response)
+        response.raise_for_status()
         return response
 
     @classmethod

@@ -3,19 +3,31 @@ import zipfile
 import io
 import requests
 import json
+import warnings
 
 
-# Note: the following rules for validating labels are based on Cromwell's documentation:
-# https://cromwell.readthedocs.io/en/develop/Labels/ and they could be changed in the future.
+# Note: the following rules for validating labels were originally based on Cromwell's documentation on Github, however,
+# From Cromwell v32, most of the restrictions on the labels have been moved:
+# https://github.com/broadinstitute/cromwell/blob/32/CHANGELOG.md
+# According to https://cromwell.readthedocs.io/en/stable/Labels/, below are the requirements for a valid label
+#  key/value pair in Cromwell:
+#
+# - Label keys may not be empty but label values may be empty.
+# - Label key and values have a max char limit of 255.
+
 _CROMWELL_LABEL_LENGTH = 63
 _CROMWELL_LABEL_KEY_REGEX = '[a-z]([-a-z0-9]*[a-z0-9])?'
 _CROMWELL_LABEL_VALUE_REGEX = '([a-z0-9]*[-a-z0-9]*[a-z0-9])?'
 
 
 def download_to_map(urls):
-    """
-    Reads contents from each url into memory and returns a
-    map of urls to their contents
+    """Reads contents from each url into memory and returns a map of urls to their contents.
+
+    Args:
+        urls (list): A list of urls to the contents to be downloaded.
+
+    Returns:
+        url_to_contents (dict): A dict representing the mapping from url to the downloaded contents in-memory.
     """
     url_to_contents = {}
     for url in urls:
@@ -25,10 +37,15 @@ def download_to_map(urls):
 
 
 def make_zip_in_memory(url_to_contents):
-    """
-    Given a map of urls and their contents, returns an in-memory zip file
-    containing each file. For each url, the part after the last slash is used
-    as the file name when writing to the zip archive.
+    """Given a map of urls and their contents, returns an in-memory zip file containing each file.
+
+    For each url, the part after the last slash is used as the file name when writing to the zip archive.
+
+    Args:
+        url_to_contents (dict): A dict representing the mapping from url to the downloaded contents in-memory.
+
+    Returns:
+        bytes_buf (_io.BytesIO): Zipped files content in bytes.
     """
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w') as zip_buffer:
@@ -45,10 +62,16 @@ def make_zip_in_memory(url_to_contents):
 
 
 def download(url):
-    """
-    Reads the contents located at the url into memory and returns them.
-    Urls starting with http are fetched with an http request. All others are
-    assumed to be local file paths and read from the local file system.
+    """Reads the contents located at the url into memory and returns them.
+
+    Urls starting with http are fetched with an http request. All others are assumed to be local file paths
+    and read from the local file system.
+
+    Args:
+        url (str): The url to the content to be downloaded.
+
+    Returns:
+        (bytes or str): Downloaded content in str or bytes format.
     """
     if url.startswith('http'):
         return download_http(url)
@@ -59,6 +82,12 @@ def download(url):
 def download_http(url):
     """
     Makes an http request for the contents at the given url and returns the response body.
+
+    Args:
+        url (str): The url to the content to be downloaded.
+
+    Returns:
+        response_str (bytes or str): Content returned from the server. Will be `str` in Python2 and bytes in `Python3`.
     """
     response = requests.get(url)
     response.raise_for_status()
@@ -69,8 +98,14 @@ def download_http(url):
 
 
 def read_local_file(path):
-    """
-    Reads the file contents and returns them.
+    """Reads the file contents and returns them.
+
+    Args:
+        path (str): Path to the local file to be loaded.
+
+    Returns:
+        contents (str): The loaded content. In Python3 and Python2, this will be a str type since we don't use
+            binary mode in open() here.
     """
     with open(path) as f:
         contents = f.read()
@@ -80,10 +115,12 @@ def read_local_file(path):
 def _content_checker(regex, content):
     """Helper function to check if a string is obeying the rule described by a regex string or not.
 
-    :param str regex: A regex string defines valid content.
-    :param str content: A string to be validated.
+    Args:
+        regex (str): A regex string defines valid content.
+        content (str): A string to be validated.
 
-    :return str: A string of error message if validation fails, or an empty string if validation succeeds.
+    Returns:
+        str: A string of error message if validation fails, or an empty string if validation succeeds.
     """
     if "fullmatch" in dir(re):  # For Python3.4+
         matched = re.fullmatch(regex, content)
@@ -99,10 +136,12 @@ def _content_checker(regex, content):
 def _length_checker(length, content):
     """Helper function to check if a string is shorter than expected length of not.
 
-    :param int length: Maximum length of an expected string.
-    :param str content: A string to be validated.
+    Args:
+        length (int): Maximum length of an expected string.
+        content (str): A string to be validated.
 
-    :return str: A string of error message if validation fails, or an empty string if validation succeeds.
+    Returns:
+        str: A string of error message if validation fails, or an empty string if validation succeeds.
     """
     if len(content) > length:
         return 'Invalid label: {0} has {1} characters. The maximum is {2}.\n'.format(content, len(content), length)
@@ -113,15 +152,17 @@ def _length_checker(length, content):
 def _emulate_python_fullmatch(regex, string, flags=0):
     """Backport Python 3.4's regular expression "fullmatch()" to Python 2 by emulating python-3.4 re.fullmatch().
 
-    If the whole string matches the regular expression pattern, return a corresponding match object.
-     Return None if the string does not match the pattern; note that this is different from a zero-length match.
+    If the whole string matches the regular expression pattern, return a corresponding match object. Return None
+    if the string does not match the pattern; note that this is different from a zero-length match.
 
-    :param str regex: A regex string.
-    :param str string: The string that you want to apply regex match to.
-    :param str|int flags: The expression's behaviour can be modified by specifying a flags value. Values can be any of
-     the variables listed in https://docs.python.org/3/library/re.html
+    Args:
+        regex (str): A regex string.
+        string (str): The string that you want to apply regex match to.
+        flags (str or int): The expression's behaviour can be modified by specifying a flags value. Values can be any of
+            the variables listed in https://docs.python.org/3/library/re.html
 
-    :return SRE_Match/None: return a corresponding match object, or None if the string does not match the pattern.
+    Returns:
+        (_sre.SRE_Match or None): A matched object, or None if the string does not match the pattern.
     """
     return re.match("(?:" + regex + r")\Z", string, flags=flags)
 
@@ -130,16 +171,22 @@ def validate_cromwell_label(label_object):
     """Check if the label object is valid for Cromwell.
 
     Note: this function as well as the global variables _CROMWELL_LABEL_LENGTH, _CROMWELL_LABEL_KEY_REGEX
-        and _CROMWELL_LABEL_VALUE_REGEX are implemented based on the Cromwell's documentation:
-        https://cromwell.readthedocs.io/en/develop/Labels/ and the Cromwell's code base:
-        https://github.com/broadinstitute/cromwell/blob/master/core/src/main/scala/cromwell/core/labels/Label.scala#L16
-        Both the docs and the code base of Cromwell could possibly change in the future, please update this
-        checker on demand.
+    and _CROMWELL_LABEL_VALUE_REGEX are implemented based on the Cromwell's documentation:
+    https://cromwell.readthedocs.io/en/develop/Labels/ and the Cromwell's code base:
+    https://github.com/broadinstitute/cromwell/blob/master/core/src/main/scala/cromwell/core/labels/Label.scala#L16
+    Both the docs and the code base of Cromwell could possibly change in the future, please update this
+    checker on demand.
 
-    :param str|_io.BytesIO label_object: A dictionary or a key-value object string that define a Cromwell label.
+    Args:
+        label_object (str or _io.BytesIO): A dictionary or a key-value object string that define a Cromwell label.
 
-    :raises ValueError: This validator will raise an exception if the label_object is invalid as a Cromwell label.
+    Raises:
+        ValueError: This validator will raise an exception if the label_object is invalid as a Cromwell label.
     """
+    warnings.warn("This function doesn't work for Cromwell v32 and later versions and has been deprecated, "
+                  "be aware of using this validator when using Cromwell v32(+). Check "
+                  "https://cromwell.readthedocs.io/en/stable/Labels/ for details.", DeprecationWarning)
+
     err_msg = ''
 
     if isinstance(label_object, str) or isinstance(label_object, bytes):
@@ -158,22 +205,19 @@ def validate_cromwell_label(label_object):
 
 
 def prepare_workflow_manifest(
-        wdl_file, inputs_json, dependencies_json=None, options_json=None, inputs2_json=None,
-        **kwargs):
-    """prepare a cromwell manifest by localizing input files
+        wdl_file, inputs_json, dependencies_json=None, options_json=None, inputs2_json=None):
+    """Prepare a Cromwell manifest by localizing input files, localize files from aws, gcp, https, or local endpoints
 
-    localize files from aws, gcp, https, or local endpoints
+    Args:
+        wdl_file (bytes or str): Downloaded in-memory WDL file content in str/bytes format.
+        inputs_json (bytes or str): Downloaded in-memory JSON content in str/bytes format.
+        dependencies_json (bytes or str): Downloaded in-memory JSON content of workflow 1st options in str/bytes format.
+        options_json (bytes or str): Downloaded in-memory JSON content of workflow options in str/bytes format.
+        inputs2_json (bytes or str): Downloaded in-memory JSON content of workflow 2nd inputs in str/bytes format.
 
-    :param wdl_file:
-    :param inputs_json:
-    :param dependencies_json:
-    :param options_json:
-    :param inputs2_json:
-    :param dict kwargs: accept arbitrary arguments
-
-    :return dict: manifest for workflow
+    Returns:
+        manifest (dict): Dictionary representing a workflow manifest to be submitted to Cromwell.
     """
-
     def download_if_string(string_or_buffer):
         if isinstance(string_or_buffer, str):
             string_or_buffer = download(string_or_buffer)
