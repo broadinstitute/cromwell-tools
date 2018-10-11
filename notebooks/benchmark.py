@@ -37,12 +37,10 @@ def get_calls(google_bucket, project_id, parent_workflow_name, cromwell_id, cred
 
     # if the user does not provide credentials
     if credentials is not None:
-
         cred = service_account.Credentials.from_service_account_file(credentials)
         storage_client = storage.Client(project_id, credentials=cred)
 
     else:
-
         storage_client = storage.Client(project_id)
 
     # get the appropriate bucket and then task calls of the workflow/cromwell id
@@ -51,10 +49,8 @@ def get_calls(google_bucket, project_id, parent_workflow_name, cromwell_id, cred
 
     calls = []
     for blob in blobs:
-
         # if the task call contains a monitoring log
         if "monitoring.log" in blob.name:
-
             calls.append(blob)
 
     # return the task calls
@@ -62,7 +58,6 @@ def get_calls(google_bucket, project_id, parent_workflow_name, cromwell_id, cred
 
 
 def get_call_logs(calls):
-
     """
     :param calls: a list of every call that contians a monitoring log
     :return: returns the information/log of every task call
@@ -70,7 +65,6 @@ def get_call_logs(calls):
 
     call_logs = {}
     for call in calls:
-
         # get the information of that call
         call_name = os.path.dirname(call.name)
         call_info = call.download_as_string()
@@ -93,7 +87,6 @@ def get_path(filename, output_dir):
 
     # if the combined path exist
     if os.path.isfile(path):
-
         # delete that current path
         os.remove(path)
 
@@ -102,7 +95,6 @@ def get_path(filename, output_dir):
 
 
 def store_benchmark(call_logs, file_name):
-
     """
     dumps the information of each call task in dictionary format into one JSON file
 
@@ -111,5 +103,4 @@ def store_benchmark(call_logs, file_name):
     """
 
     with open(file_name, "w") as logs:
-
         json.dump(call_logs, logs, sort_keys=False, indent=4)

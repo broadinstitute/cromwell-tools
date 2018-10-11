@@ -1,18 +1,19 @@
 import os
 import re
-import simplejson as json
+import json
 from dateutil import parser
 
 
 def convert_benchmark(output_dir, monitoring_log):
     """
     Converts and Saves a downloaded monitoring log to a formated JSON
+    The monitoring script can be found here gs://broad-gdr-encode-caas-execution/scripts/monitoring.sh
+
     :param output_dir: the desired output directory to store the monitoring log, plots and json file
     :param monitoring_log: monitoring log downloaded from the googgle bucket (JSON)
     """
 
     with open(monitoring_log, "r") as bm:
-
         # read json in a dict and
         call_logs = json.load(bm)
 
@@ -20,7 +21,6 @@ def convert_benchmark(output_dir, monitoring_log):
     converted_call_logs = {}
 
     for name, info in call_logs.items():
-
         # summary
         num_of_cores = None
         total_mem = {"Size": None, "Unit": None}
@@ -36,66 +36,56 @@ def convert_benchmark(output_dir, monitoring_log):
         # for each line in the task call info
         lines = info.split("\n")
         for line in lines:
-
             # if a line contains the desired info
             if '#CPU:' in line:
-
                 # get that info
                 info = get_info("\d+", line)
 
                 # if the info is of correct format
                 if info is not None:
-
                     # save that info
                     num_of_cores = int(info[0])
 
             elif 'Total Memory:' in line:
-
                 # $ for matching at the end of the string
                 info = get_info("(\d*\.\d+|\d+)(M|G|T)$", line)
 
                 if info is not None:
-
                     total_mem = {
-                        "Size": float(info[0]),
-                        "Unit": str(info[1]) + "B"}
+                        "size": float(info[0]),
+                        "unit": str(info[1]) + "B"}
 
             elif 'Total Disk space: ' in line:
-
                 info = get_info("(\d*\.\d+|\d+)(M|G|T)$", line)
-                if info is not None:
 
+                if info is not None:
                     total_disk_sapce = {
-                        "Size": float(info[0]),
-                        "Unit": str(info[1]) + "B"}
+                        "size": float(info[0]),
+                        "unit": str(info[1]) + "B"}
 
             elif '[' in line:
-
                 time_stamp = str(parser.parse(line.replace("[", '').replace("]", '').strip()))
 
             elif "CPU usage: " in line:
-
                 info = get_info("(\d*\.\d+|\d+)(%)$", line)
-                if info is not None:
 
+                if info is not None:
                     cpu_usage = float(info[0])
 
             elif '* Memory usage: ' in line:
-
                 info = get_info("(\d*\.\d+|\d+)(%)$", line)
-                if info is not None:
 
+                if info is not None:
                     mem_usage = float(info[0])
 
             # if you have read disk usage, one time stamp has been read so save that information in the log
             elif '* Disk usage: ' in line:
-
                 info = get_info("(\d*\.\d+|\d+)(%)$", line)
-                if info is not None:
 
+                if info is not None:
                     disk_usage = float(info[0])
 
-                log = {"Time": time_stamp, "CPU_Usage": cpu_usage, "Memory_Usage": mem_usage, "Disk_Usage": disk_usage}
+                log = {"time": time_stamp, "cpu_usage": cpu_usage, "memory_usage": mem_usage, "disk_usage": disk_usage}
                 logs.append(log)
 
                 disk_usage = None
@@ -106,13 +96,13 @@ def convert_benchmark(output_dir, monitoring_log):
         # add the task call name, summary and logs to a dict
         call_log = {"Id": name}
         summary = {
-            "Cores": num_of_cores,
-            "Memory": total_mem,
-            "Disk_Space": total_disk_sapce}
+            "cores": num_of_cores,
+            "memory": total_mem,
+            "disk_space": total_disk_sapce}
 
-        call_log["Summary"] = summary
-        call_log["Logs"] = logs
-        converted_call_logs.setdefault("Calls", []).append(call_log)
+        call_log["summary"] = summary
+        call_log["logs"] = logs
+        converted_call_logs.setdefault("calls", []).append(call_log)
 
     name = os.path.splitext(os.path.basename(monitoring_log))[0]
     file_name = get_path(name + "_converted_benchmark_logs.json", output_dir)
