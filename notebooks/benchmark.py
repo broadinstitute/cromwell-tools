@@ -1,5 +1,5 @@
 import os
-import simplejson as json
+import json
 from google.cloud import storage
 from google.oauth2 import service_account
 
@@ -75,7 +75,6 @@ def get_call_logs(calls):
 
 
 def get_path(filename, output_dir):
-
     """
     :param filename: the filename to be saved in the output directory
     :param output_dir: the desired output directory to store the monitoring log, plots and json file
