@@ -185,7 +185,7 @@ def validate_cromwell_label(label_object):
     """
     warnings.warn("This function doesn't work for Cromwell v32 and later versions and has been deprecated, "
                   "be aware of using this validator when using Cromwell v32(+). Check "
-                  "https://cromwell.readthedocs.io/en/stable/Labels/ for details.", DeprecationWarning)
+                  "https://cromwell.readthedocs.io/en/stable/Labels/ for details.", PendingDeprecationWarning)
 
     err_msg = ''
 
