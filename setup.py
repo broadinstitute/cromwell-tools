@@ -31,9 +31,13 @@ setup(
         'six>=1.11.0',
         'oauth2client>=4.1.2',
         'tenacity>=4.10.0',
-        'setuptools_scm>=3.1.0'
+        'setuptools_scm>=3.1.0,<4'
     ],
-    scripts=['cromwell_tools/scripts/cromwell-tools'],
+    entry_points={
+        'console_scripts': [
+            'cromwell-tools = cromwell_tools._cli:main'
+        ]
+    },
     include_package_data=True
 )
 
