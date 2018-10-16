@@ -1,3 +1,4 @@
+from dateutil import parser
 import json
 import re
 import os
@@ -6,12 +7,11 @@ import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-from dateutil import parser
 
 
 def plot_benchmark(monitoring_log, parent_workflow_name, cromwell_id, output_dir):
     """
-    Plots the converted/formated monitoring log (JSON)
+    plots the converted/formatted monitoring log (JSON)
     :param monitoring_log: monitoring log in JSON format
     :param parent_workflow_name: the name of the workflow being run
     :param cromwell_id: the cromwell id for the workflow being run
@@ -38,47 +38,40 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
     start_times = []
     max_memory_usages = []
 
-    # for all the calls (dict)
     for key, calls in calls_dict.items():
-        # for each call (list)
         for call in calls:
-            task_call = ""
-            total_mem = ""
+
             time_stamps = []
             memory_usages = []
 
-            # for each set of info for the call
-            for name, info in call.items():
-                if name == "id":
-                    match = re.findall(r"(shard-\d+)$", info)
-
-                    # if task is not a shard
-                    if len(match) == 0:
-                        # get the name of the task
-                        task_call = os.path.basename(info)
-
-                    # if task is a shard
-                    else:
-                        # get the name of the task that was scattered plus the shard
-                        task_call = os.path.basename(os.path.dirname(info)) + " " + os.path.basename(info)
-
-                if name == "summary":
-                    total_mem = str(info["memory"]["size"]) + str(info["memory"]["unit"])
-
-                if name == "logs":
-                    # for the log of each time stamp
-                    for log in info:
-                        for log_type, value in log.items():
-                            if log_type == "time":
-                                time = parser.parse(value)
-                                time_stamps.append(time)
-
-                            if log_type == "memory_usage":
-                                memory_usages.append(value)
-
-            # add the information to the lists
-            task_calls.append(task_call)
+            # get the id/name and total memory of each task call
+            total_mem = str(call["summary"]["memory"]["size"]) + str(call["summary"]["memory"]["unit"])
             total_memories.append(total_mem)
+            name = str(call["id"])
+            match = re.findall(r"(shard-\d+)$", name)
+            # if task is not a shard
+            if len(match) == 0:
+                # get the name of the task
+                # i.e: os.path.basename(/workflow/cromwell_id/call) == call
+                task_call = os.path.basename(name)
+
+            # if task is a shard
+            else:
+                # get the name of the task that was scattered plus the shard
+                # i.e: os.path.dirname(/workflow/cromwell_id/call/shard) == /workflow_/cromwell_id/call/
+                # i.e: os.path.basename(/workflow/cromwell_id/call) == call
+                task_call = os.path.basename(os.path.dirname(name)) + " " + os.path.basename(name)
+
+            task_calls.append(task_call)
+
+            # get the memory usage and time for each time stamp of the call
+            logs = call["logs"]
+            for log in logs:
+                time = parser.parse(log["time"])
+                time_stamps.append(time)
+
+                memory_usage = log["memory_usage"]
+                memory_usages.append(memory_usage)
 
             start_time = None
             if len(time_stamps) > 0:

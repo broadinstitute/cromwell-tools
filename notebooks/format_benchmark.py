@@ -6,7 +6,7 @@ from dateutil import parser
 
 def convert_benchmark(output_dir, monitoring_log):
     """
-    Converts and Saves a downloaded monitoring log to a formated JSON
+    converts and Saves a downloaded monitoring log to a formated JSON
     The monitoring script can be found here gs://broad-gdr-encode-caas-execution/scripts/monitoring.sh
     :param output_dir: the desired output directory to store the combined monitoring log json file
     :param monitoring_log: monitoring log downloaded from the googgle bucket (JSON)
@@ -104,7 +104,7 @@ def convert_benchmark(output_dir, monitoring_log):
         converted_call_logs.setdefault("calls", []).append(call_log)
 
     name = os.path.splitext(os.path.basename(monitoring_log))[0]
-    file_name = get_path(name + "_formated.json", output_dir)
+    file_name = get_path(name + "_formatted.json", output_dir)
     store_benchmark(converted_call_logs, file_name)
 
 
