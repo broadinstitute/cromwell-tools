@@ -5,6 +5,8 @@ from cromwell_tools._cromwell_auth import CromwellAuth
 
 
 def parser(arguments=None):
+    # TODO: dynamically walk through the commands and automatcially create parsers here
+
     main_parser = argparse.ArgumentParser()
 
     subparsers = main_parser.add_subparsers(help='sub-command help', dest='command')

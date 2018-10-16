@@ -34,8 +34,6 @@ Usage
 
 Python API
 ----------
-The rest of the package consists of scripts that are meant to be invoked from the command line.
-
 In Python, you can then import the package with:
 
 .. code:: python

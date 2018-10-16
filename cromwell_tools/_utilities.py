@@ -1,15 +1,19 @@
-import re
-import zipfile
 import io
-import requests
 import json
+import os
+import re
+import requests
+import shutil
+import tempfile
 import warnings
+import zipfile
+from subprocess import PIPE, Popen
 
 
-# Note: the following rules for validating labels were originally based on Cromwell's documentation on Github, however,
-# From Cromwell v32, most of the restrictions on the labels have been moved:
+# Note: the following rules for validating labels were originally based on Cromwell's documentation on Github:
 # https://github.com/broadinstitute/cromwell/blob/32/CHANGELOG.md
-# According to https://cromwell.readthedocs.io/en/stable/Labels/, below are the requirements for a valid label
+# However, from Cromwell v32, most of the restrictions on the labels have been moved, according to
+# https://cromwell.readthedocs.io/en/stable/Labels/, below are the requirements for a valid label
 #  key/value pair in Cromwell:
 #
 # - Label keys may not be empty but label values may be empty.
@@ -218,6 +222,7 @@ def prepare_workflow_manifest(
     Returns:
         manifest (dict): Dictionary representing a workflow manifest to be submitted to Cromwell.
     """
+
     def download_if_string(string_or_buffer):
         if isinstance(string_or_buffer, str):
             string_or_buffer = download(string_or_buffer)
@@ -233,7 +238,7 @@ def prepare_workflow_manifest(
         dependencies_bytes = download_if_string(dependencies_json)
         dependencies_json = json.loads(dependencies_bytes)
         manifest['dependencies_zip'] = make_zip_in_memory(
-            {k: download(v) for k, v in dependencies_json.items()}
+                {k: download(v) for k, v in dependencies_json.items()}
         )
     if options_json is not None:
         manifest['options_json'] = download_if_string(options_json)
@@ -242,3 +247,58 @@ def prepare_workflow_manifest(
         manifest['inputs2_json'] = download_if_string(inputs2_json)
 
     return manifest
+
+
+def _localize_file(url, target_directory='.'):
+    """Localize file url to a directory. Supports both local files and http(s) endpoints.
+
+    Args:
+        url (str): URL of local or http target.
+        target_directory (str): Directory to localize file to.
+    """
+    if not os.path.isdir(target_directory):
+        raise NotADirectoryError(
+                'target_directory must be a valid directory on the local filesystem')
+
+    basename = os.path.basename(url)
+    target_file = os.path.join(target_directory, basename)
+
+    if url.startswith('http'):
+        data = download_http(url)
+        with open(target_file, 'wb') as f:
+            f.write(data)
+    else:
+        if not os.path.isfile(url):
+            raise FileNotFoundError(
+                'non-http files must point to a valid file on the local filesystem. Not found: {}'.format(url))
+        else:
+            shutil.copy(url, target_file)
+
+
+def validate_workflow(wdl, womtool_path, dependencies_json=None):
+    """Validate a wdl workflow using cromwell womtool.
+
+    Args:
+        wdl (str): lLink or file path to wdl file.
+        womtool_path (str): Path to the womtool.jar. For more details about what is a womtools,
+            see https://github.com/broadinstitute/cromwell/releases)
+        dependencies_json (str): File path to json file containing workflow dependencies.
+    """
+    temporary_directory = tempfile.mkdtemp()
+
+    _localize_file(wdl, temporary_directory)
+    wdl_basename = os.path.basename(wdl)
+
+    if dependencies_json is not None:
+        with open(dependencies_json, 'r') as f:
+            depenencies_map = json.load(f)
+        for url in depenencies_map.values():
+            _localize_file(url, temporary_directory)
+
+    os.chdir(temporary_directory)
+    p = Popen(['java', '-jar', os.path.expanduser(womtool_path), 'validate', wdl_basename],
+              stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    if err:
+        raise ChildProcessError(err)
+    print('stdout:\n%s' % out.decode())

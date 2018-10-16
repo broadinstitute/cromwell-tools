@@ -32,6 +32,7 @@ class CromwellAPI(object):
     # TODO: remove this if it is not critical for mocking
     requests = requests
 
+    # TODO: move the endpoints definitions to the corresponding functions after refactoring the unit tests and mocks
     _abort_endpoint = '/api/workflows/v1/{uuid}/abort'
 
     _status_endpoint = '/api/workflows/v1/{uuid}/status'
@@ -224,7 +225,7 @@ class CromwellAPI(object):
             all_succeeded = True
             for uuid in workflow_ids:
                 response = cls.status(uuid, auth)
-                status = cls._parse_status(response)
+                status = cls._parse_workflow_status(response)
                 if status in cls._failed_statuses:
                     raise WorkflowFailedException('Workflow {0} returned status {1}'.format(
                             uuid, status))
@@ -243,7 +244,7 @@ class CromwellAPI(object):
         """Request Cromwell to release the hold on a workflow.
 
         It will switch the status of a workflow from ‘On Hold’ to ‘Submitted’ so it can be picked for running. For
-        a workflow that was not submitted with `workflowOnHold = true`, Cromwell will ignore the request.
+        a workflow that was not submitted with `workflowOnHold = true`, Cromwell will throw an error.
 
         Args:
             uuid: A Cromwell workflow UUID, which is the workflow identifier. The workflow is expected to have
@@ -388,7 +389,7 @@ class CromwellAPI(object):
         return query_params
 
     @staticmethod
-    def _parse_status(response):
+    def _parse_workflow_status(response):
         """Helper function to parse a status response.
 
         Args:

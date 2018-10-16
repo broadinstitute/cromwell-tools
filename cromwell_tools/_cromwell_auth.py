@@ -34,7 +34,9 @@ class CromwellAuth:
         self.header = header
         self.auth = auth
 
-        self.url = self._validate_url(url)
+        # TODO: add a step to validate the auth information with Cromwell Server, requires /auth endpoint from Cromwell
+
+        self.url = self._validate_and_harmonize_url(url)
 
     @staticmethod
     def _validate_auth(header, auth):
@@ -63,8 +65,8 @@ class CromwellAuth:
                 raise TypeError('The auth object must be a valid "requests.auth.HTTPBasicAuth" object!')
 
     @staticmethod
-    def _validate_url(url):
-        """Validate the input Cromwell url.
+    def _validate_and_harmonize_url(url):
+        """Validate the input Cromwell url and harmonize it.
 
         Args:
             url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
@@ -80,25 +82,15 @@ class CromwellAuth:
         else:
             raise ValueError("url must be an str that points to an http(s) endpoint.")
 
-    @staticmethod
-    def _validate_connection(header, auth, url):
-        warnings.warn("This function doesn't work for Cromwell until Cromwell adds the endpoint for validating users'"
-                      "Auth information, e.g. a Who am I endpoint.", DeprecationWarning)
-        return None
-
-        dummy_auth = namedtuple('dummy_auth', ['header', 'auth', 'url'])
-        namespace = dummy_auth(header, auth, url)
-        if not CromwellAPI.health(namespace).status_code == 200:
-            raise AuthenticationError(
-                    'Could not connect to Cromwell at {url} given provided credentials'.format(
-                            url=url))
-
     @classmethod
-    def from_caas_key(cls, caas_key, url):
-        """Generate an authentication object from a CaaS JSON key file.
+    def from_service_account_key_file(cls, service_account_key, url):
+        """Generate an authentication object from a Service Account JSON key file.
+
+        The service account key file will be required if you are using Cromwell-as-a-Service or
+        you are using OAuth for your Cromwell Server.
 
         Args:
-            caas_key (str): Path to the JSON key file(service account key) for authenticating with CaaS.
+            service_account_key (str): Path to the JSON key file(service account key) for authenticating with CaaS.
             url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
 
         Returns:
@@ -108,7 +100,7 @@ class CromwellAuth:
             'https://www.googleapis.com/auth/userinfo.profile',
             'https://www.googleapis.com/auth/userinfo.email'
         ]
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(caas_key, scopes=scopes)
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(service_account_key, scopes=scopes)
         header = {"Authorization": "bearer " + credentials.get_access_token().access_token}
         return cls(url=url, header=header, auth=None)
 
@@ -184,7 +176,7 @@ class CromwellAuth:
                             repr(credentials)))
 
         if credentials["caas_key"]:
-            return cls.from_caas_key(caas_key, url)
+            return cls.from_service_account_key_file(caas_key, url)
         if credentials["secrets_file"]:
             return cls.from_secrets_file(secrets_file)
         if credentials["user_password"]:
