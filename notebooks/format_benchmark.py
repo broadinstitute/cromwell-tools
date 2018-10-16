@@ -8,8 +8,7 @@ def convert_benchmark(output_dir, monitoring_log):
     """
     Converts and Saves a downloaded monitoring log to a formated JSON
     The monitoring script can be found here gs://broad-gdr-encode-caas-execution/scripts/monitoring.sh
-
-    :param output_dir: the desired output directory to store the monitoring log, plots and json file
+    :param output_dir: the desired output directory to store the combined monitoring log json file
     :param monitoring_log: monitoring log downloaded from the googgle bucket (JSON)
     """
 
@@ -23,8 +22,8 @@ def convert_benchmark(output_dir, monitoring_log):
     for name, info in call_logs.items():
         # summary
         num_of_cores = None
-        total_mem = {"Size": None, "Unit": None}
-        total_disk_sapce = {"Size": None, "Unit": None}
+        total_mem = {"size": None, "unit": None}
+        total_disk_sapce = {"size": None, "unit": None}
 
         # log info
         logs = []
@@ -94,7 +93,7 @@ def convert_benchmark(output_dir, monitoring_log):
                 mem_usage = None
 
         # add the task call name, summary and logs to a dict
-        call_log = {"Id": name}
+        call_log = {"id": name}
         summary = {
             "cores": num_of_cores,
             "memory": total_mem,
@@ -105,7 +104,7 @@ def convert_benchmark(output_dir, monitoring_log):
         converted_call_logs.setdefault("calls", []).append(call_log)
 
     name = os.path.splitext(os.path.basename(monitoring_log))[0]
-    file_name = get_path(name + "_converted_benchmark_logs.json", output_dir)
+    file_name = get_path(name + "_formated.json", output_dir)
     store_benchmark(converted_call_logs, file_name)
 
 
