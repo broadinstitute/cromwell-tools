@@ -1,73 +1,68 @@
+import os
 import tempfile
 import json
-
+import mock
 import pytest
-
-import requests_mock
-
-from cromwell_tools._cromwell_auth import CromwellAuth
+import requests
+from cromwell_tools.cromwell_auth import CromwellAuth
 
 
 def setup_auth_types():
     temp_dir = tempfile.mkdtemp()
-    secrets_file = temp_dir + 'fake_secrets.json'
+    secrets_file = os.path.join(temp_dir, 'fake_secrets.json')
+    caas_key_file = os.path.join(temp_dir, 'fake_key.json')
     username = "fake_user"
     password = "fake_password"
     url = "https://fake_url"
 
-    user_password = {
+    auth_params = {
         "url": url,
-        "user": username,
+        "username": username,
         "password": password
     }
     with open(secrets_file, 'w') as f:
-        json.dump(user_password, f)
+        json.dump(auth_params, f)
 
-    # produce authentication types
-    return {
-        "secrets_file": {"secrets_file": secrets_file},
-        "caas_key": {"caas_key": "path/fake_key.json", "cromwell_url": url},
-        "user_password": user_password
-    }
+    auth_params['secrets_file'] = {"secrets_file": secrets_file}
+    auth_params['caas_key'] = {"caas_key": caas_key_file, "url": url}
+    return auth_params
+
 
 auth_types = setup_auth_types()
 
 
-@pytest.fixture(scope='module', params=auth_types.values(), ids=auth_types.keys())
-def auth_types(request):
-    return request.param
+@mock.patch('cromwell_tools.cromwell_auth.CromwellAuth.from_service_account_key_file')
+def test_harmonize_credentials_only_takes_one_auth_type(mock_header):
+    url = 'https://cromwell.server.org'
+    expected_auth = CromwellAuth(url=url, header={"Authorization": "bearer fake_token"}, auth=None)
+    mock_header.return_value = expected_auth
+    with pytest.raises(ValueError):
+        CromwellAuth.harmonize_credentials(**auth_types)
 
 
-def test_cromwell_auth(auth_types):
-
-    def _request_callback(request, context):
-        context.status_code = 200
-        context.headers['test'] = 'header'
-        return {'request': {'body': "content"}}
-
-    def _request_callback_status(request, context):
-        context.status_code = 200
-        context.headers['test'] = 'header'
-        return {'status': 'Succeeded'}
-
-    with requests_mock.mock() as mock_request:
-        CromwellAuth(**auth_types)
+def test_harmonize_credentials_user_password():
+    username = 'fake_user'
+    password = 'fake_password'
+    url = 'https://cromwell.server.org'
+    expected_auth = CromwellAuth(url=url, header=None, auth=requests.auth.HTTPBasicAuth(username, password))
+    auth = CromwellAuth.harmonize_credentials(username=username, password=password, url=url)
+    assert auth, expected_auth
 
 
-@requests_mock.mock()
-def test_get_workflow_statuses(self, mock_request):
-    def _request_callback(request, context):
-        context.status_code = 200
-        context.headers['test'] = 'header'
-        return {'request': {'body': "content"}}
+def test_harmonize_credentials_from_secrets_file():
+    username = "fake_user"
+    password = "fake_password"
+    url = "https://fake_url"
+    expected_auth = CromwellAuth(url=url, header=None, auth=requests.auth.HTTPBasicAuth(username, password))
+    auth = CromwellAuth.harmonize_credentials(secrets_file=auth_types['secrets_file']['secrets_file'])
+    assert auth, expected_auth
 
-    def _request_callback_status(request, context):
-        context.status_code = 200
-        context.headers['test'] = 'header'
-        return {'status': 'Succeeded'}
 
-    ids = ["01234"]
-    mock_request.post(self.url, json=_request_callback)
-    mock_request.get(self.url + '/api/workflows/v1/{}/status'.format(ids[0]), json=_request_callback_status)
-    result = cromwell_tools.get_workflow_statuses(ids, self.url, self.user, self.password)
-    self.assertIn('Succeeded', result)
+@mock.patch('cromwell_tools.cromwell_auth.CromwellAuth.from_service_account_key_file')
+def test_harmonize_credentials_from_service_account_key(mock_header):
+    service_account_key = 'fake_key.json'
+    url = 'https://cromwell.server.org'
+    expected_auth = CromwellAuth(url=url, header={"Authorization": "bearer fake_token"}, auth=None)
+    mock_header.return_value = expected_auth
+    auth = CromwellAuth.harmonize_credentials(url=url, caas_key=service_account_key)
+    assert auth, expected_auth

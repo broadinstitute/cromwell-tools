@@ -1,7 +1,7 @@
 import argparse
 
-from cromwell_tools._cromwell_api import CromwellAPI
-from cromwell_tools._cromwell_auth import CromwellAuth
+from cromwell_tools.cromwell_api import CromwellAPI
+from cromwell_tools.cromwell_auth import CromwellAuth
 
 
 def parser(arguments=None):
@@ -19,7 +19,9 @@ def parser(arguments=None):
             'status', help='status help', description='Get the status of one or more workflows.')
     health = subparsers.add_parser(
             'health', help='health help',
-            description='Check that cromwell is running and that provided authentication is valid')
+            description='Check that cromwell is running and that provided authentication is valid.')
+    validate = subparsers.add_parser(
+        'validate', help='validate help', description='Validate a cromwell workflow using womtool.')
 
     # cromwell url and authentication arguments apply to all sub-commands
     cromwell_sub_commands = [submit, wait, status, health]
@@ -47,9 +49,15 @@ def parser(arguments=None):
 
     # status arguments
     status.add_argument('--uuid', required=True)
+
+    # validate arguments
+    validate.add_argument('--wdl-file', type=str, required=True)
+    validate.add_argument('--womtool-path', type=str, required=True, help='path to cromwell womtool jar')
+    validate.add_argument('--dependencies-json', type=str, default=None)
+
     args = vars(main_parser.parse_args(arguments))
     # todo see if this can be moved or if the commands can be populated from above
-    if args['command'] in ('run', 'wait', 'status', 'health'):
+    if args['command'] in ('submit', 'wait', 'status', 'health', 'validate'):
         auth = CromwellAuth.harmonize_credentials(**args)
         args['auth'] = auth
     command = getattr(CromwellAPI, args['command'])

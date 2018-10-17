@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
+.pytest_cache
 docker/cromwell-metadata/cromwell_credentials.txt
 docker/cromwell-metadata/caas_key.json
 

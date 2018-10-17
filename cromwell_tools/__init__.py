@@ -16,4 +16,4 @@ except DistributionNotFound:
 # cromwell_tools.api.metadata
 # cromwell_tools.api.run
 # ...
-from cromwell_tools._cromwell_api import CromwellAPI as api
+from cromwell_tools.cromwell_api import CromwellAPI as api

@@ -1,12 +1,7 @@
-from collections import namedtuple
-
 import json
 import requests
 import requests.auth
-import warnings
 from oauth2client.service_account import ServiceAccountCredentials
-
-from cromwell_tools._cromwell_api import CromwellAPI
 
 
 class AuthenticationError(Exception):
@@ -30,13 +25,11 @@ class CromwellAuth:
                 i.e. username and password.
         """
 
+        # TODO: add a step to validate the auth information with Cromwell Server, requires /auth endpoint from Cromwell
         self._validate_auth(header, auth)
         self.header = header
         self.auth = auth
-
-        # TODO: add a step to validate the auth information with Cromwell Server, requires /auth endpoint from Cromwell
-
-        self.url = self._validate_and_harmonize_url(url)
+        self.url = self._validate_url(url)
 
     @staticmethod
     def _validate_auth(header, auth):
@@ -54,18 +47,18 @@ class CromwellAuth:
         if not header and not auth:
             raise ValueError("Either a header containing bearer token or a HTTPBasic Auth object must be passed.")
 
-        if header is not None:
+        if header:
             if not isinstance(header, dict):
                 raise TypeError('If passed, header must be a dict.')
             if "Authorization" not in header.keys():
                 raise TypeError('The header must have an "Authorization" key')
 
-        if auth is not None:
+        if auth:
             if not isinstance(auth, requests.auth.HTTPBasicAuth):
                 raise TypeError('The auth object must be a valid "requests.auth.HTTPBasicAuth" object!')
 
     @staticmethod
-    def _validate_and_harmonize_url(url):
+    def _validate_url(url):
         """Validate the input Cromwell url and harmonize it.
 
         Args:

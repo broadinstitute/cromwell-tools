@@ -4,10 +4,8 @@ import os
 import re
 import requests
 import shutil
-import tempfile
 import warnings
 import zipfile
-from subprocess import PIPE, Popen
 
 
 # Note: the following rules for validating labels were originally based on Cromwell's documentation on Github:
@@ -116,6 +114,32 @@ def read_local_file(path):
     return contents
 
 
+def _localize_file(url, target_directory='.'):
+    """Localize file url to a directory. Supports both local files and http(s) endpoints.
+
+    Args:
+        url (str): URL of local or http target.
+        target_directory (str): Directory to localize file to.
+    """
+    if not os.path.isdir(target_directory):
+        raise NotADirectoryError(
+            'target_directory must be a valid directory on the local filesystem')
+
+    basename = os.path.basename(url)
+    target_file = os.path.join(target_directory, basename)
+
+    if url.startswith('http'):
+        data = download_http(url)
+        with open(target_file, 'wb') as f:
+            f.write(data)
+    else:
+        if not os.path.isfile(url):
+            raise FileNotFoundError(
+                'non-http files must point to a valid file on the local filesystem. Not found: {}'.format(url))
+        else:
+            shutil.copy(url, target_file)
+
+
 def _content_checker(regex, content):
     """Helper function to check if a string is obeying the rule described by a regex string or not.
 
@@ -206,99 +230,3 @@ def validate_cromwell_label(label_object):
 
     if err_msg != '':
         raise ValueError(err_msg)
-
-
-def prepare_workflow_manifest(
-        wdl_file, inputs_json, dependencies_json=None, options_json=None, inputs2_json=None):
-    """Prepare a Cromwell manifest by localizing input files, localize files from aws, gcp, https, or local endpoints
-
-    Args:
-        wdl_file (bytes or str): Downloaded in-memory WDL file content in str/bytes format.
-        inputs_json (bytes or str): Downloaded in-memory JSON content in str/bytes format.
-        dependencies_json (bytes or str): Downloaded in-memory JSON content of workflow 1st options in str/bytes format.
-        options_json (bytes or str): Downloaded in-memory JSON content of workflow options in str/bytes format.
-        inputs2_json (bytes or str): Downloaded in-memory JSON content of workflow 2nd inputs in str/bytes format.
-
-    Returns:
-        manifest (dict): Dictionary representing a workflow manifest to be submitted to Cromwell.
-    """
-
-    def download_if_string(string_or_buffer):
-        if isinstance(string_or_buffer, str):
-            string_or_buffer = download(string_or_buffer)
-        return string_or_buffer
-
-    manifest = {
-        'wdl_file': download_if_string(wdl_file),
-        'inputs_json': download_if_string(inputs_json)
-    }
-
-    # add optional files
-    if dependencies_json is not None:
-        dependencies_bytes = download_if_string(dependencies_json)
-        dependencies_json = json.loads(dependencies_bytes)
-        manifest['dependencies_zip'] = make_zip_in_memory(
-                {k: download(v) for k, v in dependencies_json.items()}
-        )
-    if options_json is not None:
-        manifest['options_json'] = download_if_string(options_json)
-
-    if inputs2_json is not None:
-        manifest['inputs2_json'] = download_if_string(inputs2_json)
-
-    return manifest
-
-
-def _localize_file(url, target_directory='.'):
-    """Localize file url to a directory. Supports both local files and http(s) endpoints.
-
-    Args:
-        url (str): URL of local or http target.
-        target_directory (str): Directory to localize file to.
-    """
-    if not os.path.isdir(target_directory):
-        raise NotADirectoryError(
-                'target_directory must be a valid directory on the local filesystem')
-
-    basename = os.path.basename(url)
-    target_file = os.path.join(target_directory, basename)
-
-    if url.startswith('http'):
-        data = download_http(url)
-        with open(target_file, 'wb') as f:
-            f.write(data)
-    else:
-        if not os.path.isfile(url):
-            raise FileNotFoundError(
-                'non-http files must point to a valid file on the local filesystem. Not found: {}'.format(url))
-        else:
-            shutil.copy(url, target_file)
-
-
-def validate_workflow(wdl, womtool_path, dependencies_json=None):
-    """Validate a wdl workflow using cromwell womtool.
-
-    Args:
-        wdl (str): lLink or file path to wdl file.
-        womtool_path (str): Path to the womtool.jar. For more details about what is a womtools,
-            see https://github.com/broadinstitute/cromwell/releases)
-        dependencies_json (str): File path to json file containing workflow dependencies.
-    """
-    temporary_directory = tempfile.mkdtemp()
-
-    _localize_file(wdl, temporary_directory)
-    wdl_basename = os.path.basename(wdl)
-
-    if dependencies_json is not None:
-        with open(dependencies_json, 'r') as f:
-            depenencies_map = json.load(f)
-        for url in depenencies_map.values():
-            _localize_file(url, temporary_directory)
-
-    os.chdir(temporary_directory)
-    p = Popen(['java', '-jar', os.path.expanduser(womtool_path), 'validate', wdl_basename],
-              stdout=PIPE, stderr=PIPE)
-    out, err = p.communicate()
-    if err:
-        raise ChildProcessError(err)
-    print('stdout:\n%s' % out.decode())
