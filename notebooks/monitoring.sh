@@ -71,4 +71,4 @@ TEMP=$(mktemp /temp_monitoring.XXXXXXXX)
 echo "${cpu_prev[@]}" > ${TEMP}
 
 echo --- Runtime Information ---
-while true; do runtime_info; sleep 5; done
+while true; do runtime_info; sleep 30; done
