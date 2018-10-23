@@ -1,5 +1,6 @@
 from setuptools import setup
 
+
 CLASSIFIERS = [
     "Development Status :: 4 - Beta",
     "Natural Language :: English",
@@ -14,30 +15,39 @@ CLASSIFIERS = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
+install_requires = [
+    'requests>=2.19.1',
+    'six>=1.11.0',
+    'oauth2client>=4.1.2',
+    'tenacity>=4.10.0',
+    'setuptools_scm>=3.1.0,<4'
+]
 
-setup(
-    name='cromwell-tools',
-    use_scm_version=True,
-    setup_requires=['setuptools_scm'],
-    description='Utilities for interacting with the Cromwell workflow engine',
-    classifiers=CLASSIFIERS,
-    url='http://github.com/broadinstitute/cromwell-tools',
-    author='Mint Team',
-    author_email='mintteam@broadinstitute.org',
-    license='BSD 3-clause "New" or "Revised" License',
-    packages=['cromwell_tools'],
-    install_requires=[
-        'requests>=2.19.1',
-        'six>=1.11.0',
-        'oauth2client>=4.1.2',
-        'tenacity>=4.10.0',
-        'setuptools_scm>=3.1.0,<4'
-    ],
-    entry_points={
-        'console_scripts': [
-            'cromwell-tools = cromwell_tools._cli:main'
-        ]
-    },
-    include_package_data=True
-)
+extras_require = {
+    'test': [
+        'mock>=2.0.0',
+        'requests_mock>=1.4.0',
+        'pytest-cov>=2.5.1',
+        'pytest>=3.6.3',
+        'pytest-timeout>=1.3.1'
+    ]
+}
 
+setup(name='cromwell-tools',
+      use_scm_version=True,
+      setup_requires=['setuptools_scm'],
+      description='Utilities for interacting with the Cromwell workflow engine',
+      classifiers=CLASSIFIERS,
+      url='http://github.com/broadinstitute/cromwell-tools',
+      author='Mint Team',
+      author_email='mintteam@broadinstitute.org',
+      license='BSD 3-clause "New" or "Revised" License',
+      packages=['cromwell_tools'],
+      install_requires=install_requires,
+      extras_require=extras_require,
+      entry_points={
+          'console_scripts': [
+              'cromwell-tools = cromwell_tools.cli:main'
+          ]
+      },
+      include_package_data=True)

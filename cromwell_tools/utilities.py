@@ -206,7 +206,7 @@ def validate_cromwell_label(label_object):
     checker on demand.
 
     Args:
-        label_object (str or _io.BytesIO): A dictionary or a key-value object string that define a Cromwell label.
+        label_object (dict or str or _io.BytesIO): A dictionary or a key-value object string defines a Cromwell label.
 
     Raises:
         ValueError: This validator will raise an exception if the label_object is invalid as a Cromwell label.
@@ -217,8 +217,10 @@ def validate_cromwell_label(label_object):
 
     err_msg = ''
 
-    if isinstance(label_object, str) or isinstance(label_object, bytes):
+    if isinstance(label_object, str):
         label_object = json.loads(label_object)
+    elif isinstance(label_object, bytes):
+        label_object = json.loads(label_object.decode('utf-8'))
     elif isinstance(label_object, io.BytesIO):
         label_object = json.loads(label_object.getvalue())
 

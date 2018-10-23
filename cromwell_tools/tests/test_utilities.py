@@ -6,6 +6,7 @@ import six
 import tempfile
 import unittest
 import zipfile
+import pytest
 
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))

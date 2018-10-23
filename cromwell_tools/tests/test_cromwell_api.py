@@ -204,9 +204,8 @@ class TestAPI(unittest.TestCase):
         with self.assertRaises(ValueError):
             CromwellAPI._compose_query_params(query_dict)
 
-
     @requests_mock.mock()
-    def test_release_workflow_returns_200(self, mock_request):
+    def test_release_onhold_returns_200(self, mock_request):
         workflow_id = '12345abcde'
 
         def _request_callback(request, context):
@@ -246,13 +245,55 @@ class TestAPI(unittest.TestCase):
                 CromwellAPI.release_hold(workflow_id, cromwell_auth).raise_for_status()
 
     @requests_mock.mock()
-    def test_get_workflow_status(self, mock_request):
+    def test_health_returns_200(self, mock_request):
+        expected = {
+            "DockerHub": {
+                "ok": "true"
+            },
+            "Engine Database": {
+                "ok": "true"
+            },
+            "PAPI": {
+                "ok": "true"
+            },
+            "GCS": {
+                "ok": "true"
+            }
+        }
 
         def _request_callback(request, context):
             context.status_code = 200
             context.headers['test'] = 'header'
-            return {'request': {'body': "content"}}
+            return expected
 
+        for cromwell_auth in self.auth_options:
+            mock_request.get('{0}/api/engine/v1/status'.format(cromwell_auth.url),
+                              json=_request_callback)
+            result = CromwellAPI.health(cromwell_auth)
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(result.json(), expected)
+
+    @requests_mock.mock()
+    def test_abort(self, mock_request):
+        workflow_id = "01234"
+        expected = {
+            "id": workflow_id,
+            "status": "Aborting"
+        }
+
+        def _request_callback(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return expected
+
+        for cromwell_auth in self.auth_options:
+            mock_request.post(cromwell_auth.url + '/api/workflows/v1/{}/abort'.format(workflow_id),
+                              json=_request_callback)
+            result = CromwellAPI.abort(workflow_id, cromwell_auth)
+            self.assertEqual(result.json(), expected)
+
+    @requests_mock.mock()
+    def test_status(self, mock_request):
         def _request_callback_status(request, context):
             context.status_code = 200
             context.headers['test'] = 'header'
@@ -260,7 +301,6 @@ class TestAPI(unittest.TestCase):
 
         workflow_id = "01234"
         for cromwell_auth in self.auth_options:
-            mock_request.post(cromwell_auth.url, json=_request_callback)
             mock_request.get(cromwell_auth.url + '/api/workflows/v1/{}/status'.format(workflow_id),
                              json=_request_callback_status)
             result = CromwellAPI.status(workflow_id, cromwell_auth)

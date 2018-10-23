@@ -4,4 +4,4 @@
 docker build -t cromwell-tools:test ../..
 
 # Run unit tests in docker container
-docker run --entrypoint python3 cromwell-tools:test -m unittest discover -v
+docker run cromwell-tools:test pytest --cov=cromwell_tools cromwell_tools/tests
