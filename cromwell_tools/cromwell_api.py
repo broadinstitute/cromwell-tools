@@ -3,16 +3,17 @@ TODO: add some module docs
 """
 
 import time
-import tempfile
-from subprocess import PIPE, Popen
-import os
+
 import json
 import logging
+import os
 import requests
+import tempfile
 from datetime import datetime, timedelta
+from subprocess import PIPE, Popen
 from tenacity import retry, stop_after_delay, wait_exponential
 
-from cromwell_tools.utilities import validate_cromwell_label, _localize_file
+from cromwell_tools.utilities import _localize_file, validate_cromwell_label
 
 
 logger = logging.getLogger(__name__)
@@ -136,18 +137,20 @@ class CromwellAPI(object):
         """ Submits a workflow to Cromwell.
 
         Args:
-            auth (cromwell_tools.cromwell_auth.CromwellAuth): authentication class holding auth information to a Cromwell server.
+            auth (cromwell_tools.cromwell_auth.CromwellAuth): authentication class holding auth information to a
+                Cromwell server.
             wdl_file (_io.BytesIO): The workflow source file to submit for execution. From version 35,
                 Cromwell starts to accept URL to the WDL file besides actual WDL files.
             inputs_file (_io.BytesIO): File-like object containing input data in JSON format.
             options_file (Optional[_io.BytesIO]): Cromwell configs file.
             inputs_file2 (Optional[_io.BytesIO]): Inputs file 2.
             zip_file (Optional[_io.BytesIO]): Zip file containing dependencies.
-            collection_name (Optional[str]): Collection in SAM that the workflow should belong to.
+            collection_name (Optional[str]): Collection in SAM that the workflow should belong to, if use CaaS. (
+                default None)
             label (Optional[Union[str, _io.BytesIO]]): JSON file containing a collection of
-                key/value pairs for workflow labels. # TODO: verify these types are accurate
+                key/value pairs for workflow labels. (default None) # TODO: verify these types are accurate
             validate_labels (Optional[bool]) If True, validate cromwell labels. (default False)
-            on_hold (Optional[bool]) Whether to submit the workflow in "On Hold" status.
+            on_hold (Optional[bool]) Whether to submit the workflow in "On Hold" status. (default False)
 
         Raises:
             requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
@@ -181,20 +184,20 @@ class CromwellAPI(object):
         return response
 
     @classmethod
-    def wait(cls, workflow_ids, timeout_minutes, auth, poll_interval_seconds=30, verbose=True):
+    def wait(cls, workflow_ids, auth, timeout_minutes=120, poll_interval_seconds=30, verbose=True):
         """Wait until cromwell returns successfully for each provided workflow
 
         Given a list of workflow ids, wait until cromwell returns successfully for each status, or
         one of the workflows fails or is aborted.
 
         Args:
-        workflow_ids (List): Workflow ids to wait for terminal status
-        timeout_minutes (int): Maximum number of minutes to wait
+        workflow_ids (List): Workflow ids to wait for terminal status.
+        timeout_minutes (int): Maximum number of minutes to wait. (default 120)
         auth (cromwell_tools._cromwell_auth.CromwellAuth): Authentication class holding headers
-            or auth information to a Cromwell server
+            or auth information to a Cromwell server.
         poll_interval_seconds (Optional[int]): Number of seconds between checks for workflow
-            completion (default 30)
-        verbose (Optional[bool]): If True, report to stdout when all workflows succeed
+            completion. (default 30)
+        verbose (Optional[bool]): If True, report to stdout when all workflows succeed.
             (default True)
         """
         start = datetime.now()
@@ -227,7 +230,7 @@ class CromwellAPI(object):
     def release_hold(cls, uuid, auth, raise_for_status=False):
         """Request Cromwell to release the hold on a workflow.
 
-        It will switch the status of a workflow from ‘On Hold’ to ‘Submitted’ so it can be picked for running. For
+        It will switch the status of a workflow from 'On Hold' to 'Submitted' so it can be picked for running. For
         a workflow that was not submitted with `workflowOnHold = true`, Cromwell will throw an error.
 
         Args:
@@ -254,7 +257,8 @@ class CromwellAPI(object):
 
     @classmethod
     def query(cls, query_dict, auth, raise_for_status=False):
-        """
+        """Query for workflows.
+
         TODO: Given that Cromwell-as-a-Service blocks a set of features that are available in Cromwell, e.g. 'labelor',
         for security concerns, the first iteration of this API doesn't come up with the advanced query keys of the
         Cromwell except a set of necessary ones. However, we need to implement this for completeness and keep an eye

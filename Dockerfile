@@ -39,14 +39,14 @@ RUN pip install wheel
 RUN pip install --upgrade setuptools
 
 # Upgrade pip3 for Python3
-RUN pip3 install --upgrade pip
+RUN pip3 install -U setuptools
+RUN pip3 install -U pip
 RUN pip3 install wheel
-RUN pip3 install --upgrade setuptools
 
 # Copy the whole module
 WORKDIR /cromwell-tools
 COPY . .
 
 # Install dependencies(including those for testing)
-RUN pip install .[test]
+RUN pip2 install .[test]
 RUN pip3 install .[test]

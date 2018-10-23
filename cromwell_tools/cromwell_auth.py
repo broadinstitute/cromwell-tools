@@ -1,6 +1,7 @@
 import json
 import requests
 import requests.auth
+import six
 from oauth2client.service_account import ServiceAccountCredentials
 
 
@@ -53,16 +54,15 @@ class CromwellAuth:
             if "Authorization" not in header.keys():
                 raise TypeError('The header must have an "Authorization" key')
 
-        if auth:
-            if not isinstance(auth, requests.auth.HTTPBasicAuth):
-                raise TypeError('The auth object must be a valid "requests.auth.HTTPBasicAuth" object!')
+        if auth and not isinstance(auth, requests.auth.HTTPBasicAuth):
+            raise TypeError('The auth object must be a valid "requests.auth.HTTPBasicAuth" object!')
 
     @staticmethod
     def _validate_url(url):
-        """Validate the input Cromwell url and harmonize it.
+        """Validate the input Cromwell url and remove the trailing slash.
 
         Args:
-            url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+            url (str or unicode): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
 
         Returns:
             str: The URL to the Cromwell server without slash at the end. e.g. "https://cromwell.server.org"
@@ -70,8 +70,8 @@ class CromwellAuth:
         Raises:
             ValueError: If the input url is invalid, i.e. not following http(s) schema.
         """
-        if isinstance(url, str) and url.startswith('http'):
-            return url.strip('/')
+        if isinstance(url, six.string_types) and url.startswith('http'):
+            return str(url.strip('/'))
         else:
             raise ValueError("url must be an str that points to an http(s) endpoint.")
 
@@ -102,7 +102,7 @@ class CromwellAuth:
         """Generate an authentication object from a JSON file that contains credentials info for HTTPBasicAuth.
 
         Args:
-            secrets_file (str): JSON file containing username, password, and url fields. e.g.
+            secrets_file (str): Path to the JSON file containing username, password, and url fields. e.g.
                 {
                     "username": "",
                     "password": "",
@@ -145,7 +145,7 @@ class CromwellAuth:
             username (str): Cromwell username for HTTPBasicAuth.
             password (str): Cromwell password for HTTPBasicAuth.
             url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
-            secrets_file (str): JSON file containing username, password, and url fields. e.g.
+            secrets_file (str): Path to the JSON file containing username, password, and url fields. e.g.
                 {
                     "username": "",
                     "password": "",

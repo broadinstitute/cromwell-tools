@@ -46,7 +46,8 @@ def test_harmonize_credentials_user_password():
     url = 'https://cromwell.server.org'
     expected_auth = CromwellAuth(url=url, header=None, auth=requests.auth.HTTPBasicAuth(username, password))
     auth = CromwellAuth.harmonize_credentials(username=username, password=password, url=url)
-    assert auth, expected_auth
+    assert auth.auth == expected_auth.auth
+    assert auth.header == expected_auth.header
 
 
 def test_harmonize_credentials_from_secrets_file():
@@ -55,7 +56,8 @@ def test_harmonize_credentials_from_secrets_file():
     url = "https://fake_url"
     expected_auth = CromwellAuth(url=url, header=None, auth=requests.auth.HTTPBasicAuth(username, password))
     auth = CromwellAuth.harmonize_credentials(secrets_file=auth_types['secrets_file']['secrets_file'])
-    assert auth, expected_auth
+    assert auth.auth == expected_auth.auth
+    assert auth.header == expected_auth.header
 
 
 @mock.patch('cromwell_tools.cromwell_auth.CromwellAuth.from_service_account_key_file')
@@ -65,4 +67,4 @@ def test_harmonize_credentials_from_service_account_key(mock_header):
     expected_auth = CromwellAuth(url=url, header={"Authorization": "bearer fake_token"}, auth=None)
     mock_header.return_value = expected_auth
     auth = CromwellAuth.harmonize_credentials(url=url, caas_key=service_account_key)
-    assert auth, expected_auth
+    assert auth == expected_auth

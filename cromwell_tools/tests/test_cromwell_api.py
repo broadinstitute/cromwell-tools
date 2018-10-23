@@ -147,7 +147,7 @@ class TestAPI(unittest.TestCase):
             {'label': 'Comment:test'}
         ]
 
-        self.assertCountEqual(CromwellAPI._compose_query_params(query_dict), expect_params)
+        six.assertCountEqual(self, CromwellAPI._compose_query_params(query_dict), expect_params)
 
     def test_compose_query_params_can_compose_nested_query_dicts(self):
         query_dict = {'status': ['Running', 'Failed', 'Submitted'],
@@ -168,7 +168,7 @@ class TestAPI(unittest.TestCase):
             {'label': 'Comment2:test2'},
             {'label': 'Comment3:test3'}
         ]
-        self.assertCountEqual(CromwellAPI._compose_query_params(query_dict), expect_params)
+        six.assertCountEqual(self, CromwellAPI._compose_query_params(query_dict), expect_params)
 
     def test_compose_query_params_can_convert_bools_within_query_dicts(self):
         query_dict = {'status': ['Running', 'Failed', 'Submitted'],
@@ -190,7 +190,7 @@ class TestAPI(unittest.TestCase):
             {'label': 'Comment3:test3'},
             {'includeSubworkflows': 'true'}
         ]
-        self.assertCountEqual(CromwellAPI._compose_query_params(query_dict), expect_params)
+        six.assertCountEqual(self, CromwellAPI._compose_query_params(query_dict), expect_params)
 
     def test_compose_query_params_raises_error_for_invalid_query_dict_that_has_multiple_values_for_exclusive_keys(self):
         query_dict = {'status': ['Running', 'Failed', 'Submitted'],
@@ -328,8 +328,7 @@ class TestValidate(unittest.TestCase):
                 assert 'cromwell_tools' in f.read()
             os.remove(localized_file)
 
-    # TODO: Fix failing test
-    @unittest.skip
+    @unittest.skipIf(not os.environ.get('WOMTOOL'), 'Environment Variable WOMTOOL not found, cannot locate womtool.jar')
     def test_validate_wdl(self):
         # change dir so we can leverage relative paths to data
         cwd = os.getcwd()
