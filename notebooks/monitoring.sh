@@ -82,7 +82,7 @@ function print_usage() {
         echo [$(date)]
         echo \* CPU usage: "$(get_cpu_usage)"%
         echo \* Memory usage: "$(get_mem_usage)"%
-        echo \* Disk usage: $(get_disk_usage)%
+        echo \* Disk usage: $(get_disk_usage)
 }
 
 function print_summary() {
