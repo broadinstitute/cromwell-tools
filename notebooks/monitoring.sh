@@ -34,7 +34,7 @@ function get_mem_usage() {
 
         # usage = 100 * mem_used / mem_total
         local -r mem_used=$(($mem_total-$mem_available))
-        echo "$mem_used" "$mem_total" | awk '{ print 100*($1/$2) }'
+        echo "$mem_used" "$mem_total" "%"| awk '{ print 100*($1/$2)$3 }'
 }
 
 function get_cpu_info() {
@@ -74,14 +74,14 @@ function get_cpu_usage() {
         echo "${cpu_prev[@]}" > ${TEMP}
 
         # usage = 100 * (cpu_used_cur - cpu_used_prev) / (cpu_total_cur-cpu_total_prev)
-        echo "$cpu_used_cur" "$cpu_used_prev" "$cpu_total_cur" "$cpu_total_prev" | awk 'BEGIN {FS=" "} ; { print 100*(($1-$2)/($3-$4)) }'
+        echo "$cpu_used_cur" "$cpu_used_prev" "$cpu_total_cur" "$cpu_total_prev" "%"| awk 'BEGIN {FS=" "} ; { print 100*(($1-$2)/($3-$4))$5 }'
 
 }
 
 function print_usage() {
         echo [$(date)]
-        echo \* CPU usage: "$(get_cpu_usage)"%
-        echo \* Memory usage: "$(get_mem_usage)"%
+        echo \* CPU usage: "$(get_cpu_usage)"
+        echo \* Memory usage: "$(get_mem_usage)"
         echo \* Disk usage: $(get_disk_usage)
 }
 
