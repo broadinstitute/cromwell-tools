@@ -18,6 +18,15 @@ from cromwell_tools.utilities import _localize_file, validate_cromwell_label
 
 logger = logging.getLogger(__name__)
 
+_failed_statuses = ('Failed', 'Aborted', 'Aborting')
+
+_cromwell_exclusive_query_keys = {'end', 'includeSubworkflows', 'start', 'submission'}
+
+_cromwell_inclusive_query_keys = {'additionalQueryResultFields', 'excludeLabelAnd', 'excludeLabelOr',
+                                  'id', 'includeSubworkflows', 'label', 'labelor', 'name', 'status'}
+
+_cromwell_query_keys = _cromwell_exclusive_query_keys.union(_cromwell_inclusive_query_keys)
+
 
 class WorkflowFailedException(Exception):
     pass
@@ -39,15 +48,6 @@ class CromwellAPI(object):
     _health_endpoint = '/api/engine/v1/status'
     _release_hold_endpoint = '/api/workflows/v1/{uuid}/releaseHold'
     _query_endpoint = '/api/workflows/v1/query'
-
-    _failed_statuses = ('Failed', 'Aborted', 'Aborting')
-
-    _cromwell_exclusive_query_keys = {'end', 'includeSubworkflows', 'start', 'submission'}
-
-    _cromwell_inclusive_query_keys = {'additionalQueryResultFields', 'excludeLabelAnd', 'excludeLabelOr',
-                                      'id', 'includeSubworkflows', 'label', 'labelor', 'name', 'status'}
-
-    _cromwell_query_keys = _cromwell_exclusive_query_keys.union(_cromwell_inclusive_query_keys)
 
     @classmethod
     def abort(cls, uuid, auth, raise_for_status=False):
@@ -213,7 +213,7 @@ class CromwellAPI(object):
             for uuid in workflow_ids:
                 response = cls.status(uuid, auth)
                 status = cls._parse_workflow_status(response)
-                if status in cls._failed_statuses:
+                if status in _failed_statuses:
                     raise WorkflowFailedException('Workflow {0} returned status {1}'.format(
                             uuid, status))
                 elif status != 'Succeeded':
@@ -357,13 +357,13 @@ class CromwellAPI(object):
 
         query_params = []
         for k, v in query_dict.items():
-            if k in cls._cromwell_query_keys:
+            if k in _cromwell_query_keys:
                 if k is 'label' and isinstance(v, dict):
                     query_params.extend([
                         {'label': label_key + ':' + label_value} for label_key, label_value in v.items()
                     ])
                 elif isinstance(v, list):
-                    if k in cls._cromwell_exclusive_query_keys:
+                    if k in _cromwell_exclusive_query_keys:
                         raise ValueError('{} cannot be specified multiple times!'.format(k))
                     query_params.extend([
                         {k: json.dumps(val)} if not isinstance(val, str) else {k: val} for val in set(v)
