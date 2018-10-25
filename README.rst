@@ -94,13 +94,13 @@ status of jobs and validate workflow files are exposed by this CLI:
                              [--password PASSWORD]
                              [--secrets-file SECRETS_FILE]
                              [--caas-key CAAS_KEY] --wdl-file WDL_FILE
-                             --inputs-json INPUTS_JSON [--zip_file ZIP_FILE]
-                             [--inputs_file2 INPUTS_FILE2]
+                             --inputs-file INPUTS_FILE [--zip-file ZIP_FILE]
+                             [--inputs-file2 INPUTS_FILE2]
                              [--options-file OPTIONS_FILE]
-                             [--collection_name COLLECTION_NAME]
+                             [--collection-name COLLECTION_NAME]
                              [--label LABEL]
-                             [--validate_labels VALIDATE_LABELS]
-                             [--on_hold ON_HOLD]
+                             [--validate-labels VALIDATE_LABELS]
+                             [--on-hold ON_HOLD]
 
     Submit a WDL workflow on Cromwell.
 
@@ -116,21 +116,22 @@ status of jobs and validate workflow files are exposed by this CLI:
       --caas-key CAAS_KEY   Path to the JSON key file(service account key) for
                             authenticating with CaaS.
       --wdl-file WDL_FILE   The workflow source file to submit for execution.
-      --inputs-json INPUTS_JSON
+      --inputs-file INPUTS_FILE
                             File-like object containing input data in JSON format.
-      --zip_file ZIP_FILE   Zip file containing dependencies.
-      --inputs_file2 INPUTS_FILE2
+      --zip-file ZIP_FILE   Zip file containing dependencies.
+      --inputs-file2 INPUTS_FILE2
                             Inputs file 2.
       --options-file OPTIONS_FILE
                             Cromwell configs file.
-      --collection_name COLLECTION_NAME
+      --collection-name COLLECTION_NAME
                             Collection in SAM that the workflow should belong to,
                             if use CaaS.
       --label LABEL         JSON file containing a collection of key/value pairs
                             for workflow labels.
-      --validate_labels VALIDATE_LABELS
+      --validate-labels VALIDATE_LABELS
                             Whether to validate cromwell labels.
-      --on_hold ON_HOLD     Whether to submit the workflow in "On Hold" status.
+      --on-hold ON_HOLD     Whether to submit the workflow in "On Hold" status.
+
 
 
 - To wait for completion of jobs:

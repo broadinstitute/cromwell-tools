@@ -45,24 +45,24 @@ def parser(arguments=None):
                        help='Path to the JSON key file(service account key) for authenticating with CaaS.')
 
     # submit arguments
-    submit.add_argument('--wdl-file', type=_io.BytesIO, required=True,
+    submit.add_argument('--wdl-file', dest='wdl_file', type=_io.BytesIO, required=True,
                         help='The workflow source file to submit for execution.')
-    submit.add_argument('--inputs-json', type=_io.BytesIO, required=True,
+    submit.add_argument('--inputs-file', dest='inputs_file', type=_io.BytesIO, required=True,
                         help='File-like object containing input data in JSON format.')
-    submit.add_argument('--zip_file', type=_io.BytesIO,
+    submit.add_argument('--zip-file', dest='zip_file', type=_io.BytesIO,
                         help='Zip file containing dependencies.')
-    submit.add_argument('--inputs_file2', type=_io.BytesIO,
+    submit.add_argument('--inputs-file2', dest='inputs_file2', type=_io.BytesIO,
                         help='Inputs file 2.')
-    submit.add_argument('--options-file', type=_io.BytesIO,
+    submit.add_argument('--options-file', dest='options_file', type=_io.BytesIO,
                         help='Cromwell configs file.')
 
-    submit.add_argument('--collection_name', type=str, default=None,
+    submit.add_argument('--collection-name', dest='collection_name', type=str, default=None,
                         help='Collection in SAM that the workflow should belong to, if use CaaS.')
-    submit.add_argument('--label', type=_io.BytesIO, default=None,
+    submit.add_argument('--label', dest='label', type=_io.BytesIO, default=None,
                         help='JSON file containing a collection of key/value pairs for workflow labels.')
-    submit.add_argument('--validate_labels', type=bool, default=False,
+    submit.add_argument('--validate-labels', dest='validate_labels', type=bool, default=False,
                         help='Whether to validate cromwell labels.')
-    submit.add_argument('--on_hold', type=bool, default=False,
+    submit.add_argument('--on-hold', dest='on_hold', type=bool, default=False,
                         help='Whether to submit the workflow in "On Hold" status.')
 
     # wait arguments
