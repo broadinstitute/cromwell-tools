@@ -314,7 +314,7 @@ class TestValidate(unittest.TestCase):
 
         # test that we can localize both local and https files. Use this file as a convenient target
         targets = [
-            'https://raw.githubusercontent.com/broadinstitute/cromwell-tools/master/'
+            'https://raw.githubusercontent.com/broadinstitute/cromwell-tools/v0.5.0/'
             'cromwell_tools/tests/test_cromwell_tools.py',
             __file__
         ]
