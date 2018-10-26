@@ -39,9 +39,9 @@ def parser(arguments=None):
                        help='Cromwell username for HTTPBasicAuth.')
         p.add_argument('--password', default=None, type=str,
                        help='Cromwell password for HTTPBasicAuth.')
-        p.add_argument('--secrets-file', default=None, type=str,
+        p.add_argument('--secrets-file', dest='secrets_file', default=None, type=str,
                        help='Path to the JSON file containing username, password, and url fields.')
-        p.add_argument('--caas-key', default=None, type=str,
+        p.add_argument('--caas-key', dest='caas_key', default=None, type=str,
                        help='Path to the JSON key file(service account key) for authenticating with CaaS.')
 
     # submit arguments
@@ -92,8 +92,13 @@ def parser(arguments=None):
     args = vars(main_parser.parse_args(arguments))
     # TODO: see if this can be moved or if the commands can be populated from above
     if args['command'] in ('submit', 'wait', 'status', 'abort', 'release_hold', 'health', 'validate'):
-        auth = CromwellAuth.harmonize_credentials(**args)
+        auth_args = ['username', 'password', 'url', 'secrets_file', 'caas_key']
+        auth_arg_dict = {k: args.get(k) for k in auth_args}
+        auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)
         args['auth'] = auth
+        for k in auth_args:
+            if k in args:
+                del args[k]
     command = getattr(CromwellAPI, args['command'])
     del args['command']
     return command, args
