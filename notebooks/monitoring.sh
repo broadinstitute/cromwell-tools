@@ -97,9 +97,8 @@ function print_summary() {
         echo \#CPU: $(nproc)
         # multiply by 10^-6 to convert KB to GB
         echo Total Memory: $(echo $(get_mem_total) 1000000 | awk '{ print $1/$2 }')G
-        echo Total Disk space: $(get_disk_info | awk '{ print $2}')
+        echo Total Disk space: $(df -h | grep cromwell_root | awk '{ print $2}')
 }
-
 
 function main() {
         # disk, mem and cpu general statisitcs
