@@ -36,10 +36,6 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
     tasks = {}
     for key, calls in calls_dict.items():
         for call in calls:
-
-            time_stamps = []
-            memory_usages = []
-
             # get the id/name of each task call
             name = str(call["id"])
             # if there the task call is an attempt
@@ -57,41 +53,32 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
 
             # if task is a shard
             else:
-
-                if len(match) > 0:
-                    # get the name of the task that was scattered plus the shard
-                    # i.e: os.path.dirname(/workflow/cromwell_id/call/shard) == /workflow_/cromwell_id/call/
-                    # i.e: os.path.basename(/workflow/cromwell_id/call) == call
-                    task_name = os.path.basename(os.path.dirname(name))
+                # get the name of the task that was scattered plus the shard
+                # i.e: os.path.dirname(/workflow/cromwell_id/call/shard) == /workflow_/cromwell_id/call/
+                task_name = os.path.basename(os.path.dirname(name))
 
             # if no other shards of the task have been stored in dict
-            if task_name not in tasks.keys():
-                # save name and total memory of task call
-                total_mem = str(call["summary"]["memory"]["size"]) + str(call["summary"]["memory"]["unit"])
+            if task_name not in tasks:
+                # store total memory and max memory of current task call
+                total_memory =  str(call["summary"]["memory"]["size"]) + str(call["summary"]["memory"]["unit"])
+                tasks[task_name] = {
+                    "max_memory": 0.0,
+                    "total_memory": total_memory}
 
-                # get max memory usage of task call
-                max_memory = 0.0
-                logs = call["logs"]
-                for log in logs:
-                    memory_usage = log["memory_usage"]
-                    if memory_usage > max_memory:
-                        max_memory = memory_usage
+            # get max memory usage of current task call
+            max_memory = 0.0
+            logs = call["logs"]
+            for log in logs:
+                memory_usage = log["memory_usage"]
+                if memory_usage > max_memory:
+                    max_memory = memory_usage
 
-                task_mem_info = {
-                    "max_memory": max_memory,
-                    "total_memory": total_mem}
-                tasks[task_name] = task_mem_info
-
-            # if another other shard of the same task exist
-            else:
-                # update the max memory usage
-                max_memory = tasks[task_name]["max_memory"]
-                for log in logs:
-                    memory_usage = log["memory_usage"]
-                    if memory_usage > max_memory:
-                        max_memory = memory_usage
-
+            # if max memory usage of current task call is > than max usage from other shards
+            if max_memory > tasks[task_name]["max_memory"]:
+                # save total memory and max memory of current task call
                 tasks[task_name]["max_memory"] = max_memory
+                tasks[task_name]["total_memory"] = str(call["summary"]["memory"]["size"]) \
+                    + str(call["summary"]["memory"]["unit"])
 
     task_calls = []
     total_memories = []
