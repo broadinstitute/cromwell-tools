@@ -33,62 +33,65 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
     :param output_dir: the desired output directory to save the plot
     """
 
-    task_calls = []
-    total_memories = []
-    start_times = []
-    max_memory_usages = []
-
+    tasks = {}
     for key, calls in calls_dict.items():
         for call in calls:
-
-            time_stamps = []
-            memory_usages = []
-
-            # get the id/name and total memory of each task call
-            total_mem = str(call["summary"]["memory"]["size"]) + str(call["summary"]["memory"]["unit"])
-            total_memories.append(total_mem)
+            # get the id/name of each task call
             name = str(call["id"])
+            # if there the task call is an attempt
+            match = re.findall(r"(attempt-\d+)$", name)
+            if len(match) > 0:
+                # remove attempt from the task call name
+                name = os.path.dirname(name)
+
             match = re.findall(r"(shard-\d+)$", name)
             # if task is not a shard
             if len(match) == 0:
                 # get the name of the task
                 # i.e: os.path.basename(/workflow/cromwell_id/call) == call
-                task_call = os.path.basename(name)
+                task_name = os.path.basename(name)
 
             # if task is a shard
             else:
                 # get the name of the task that was scattered plus the shard
                 # i.e: os.path.dirname(/workflow/cromwell_id/call/shard) == /workflow_/cromwell_id/call/
-                # i.e: os.path.basename(/workflow/cromwell_id/call) == call
-                task_call = os.path.basename(os.path.dirname(name)) + " " + os.path.basename(name)
+                task_name = os.path.basename(os.path.dirname(name))
 
-            task_calls.append(task_call)
+            # if no other shards of the task have been stored in dict
+            if task_name not in tasks:
+                # store total memory and max memory of current task call
+                total_memory =  str(call["summary"]["memory"]["size"]) + str(call["summary"]["memory"]["unit"])
+                tasks[task_name] = {
+                    "max_memory": 0.0,
+                    "total_memory": total_memory}
 
-            # get the memory usage and time for each time stamp of the call
+            # get max memory usage of current task call
+            max_memory = 0.0
             logs = call["logs"]
             for log in logs:
-                time = parser.parse(log["time"])
-                time_stamps.append(time)
-
                 memory_usage = log["memory_usage"]
-                memory_usages.append(memory_usage)
+                if memory_usage > max_memory:
+                    max_memory = memory_usage
 
-            start_time = None
-            if len(time_stamps) > 0:
-                start_time = min(time_stamps)
+            # if max memory usage of current task call is > than max usage from other shards
+            if max_memory > tasks[task_name]["max_memory"]:
+                # save total memory and max memory of current task call
+                tasks[task_name]["max_memory"] = max_memory
+                tasks[task_name]["total_memory"] = str(call["summary"]["memory"]["size"]) \
+                    + str(call["summary"]["memory"]["unit"])
 
-            start_times.append(start_time)
-
-            max_memory_usage = None
-            if len(memory_usages) > 0:
-                max_memory_usage = max(memory_usages)
-
-            max_memory_usages.append(max_memory_usage)
+    task_calls = []
+    total_memories = []
+    max_memory_usages = []
+    # store in arrays to put in data frame for plotting
+    for name, mem_info in tasks.items():
+        task_calls.append(name)
+        max_memory_usages.append(mem_info["max_memory"])
+        total_memories.append(mem_info["total_memory"])
 
     # create data frame / format for plotting
     data_frame = pd.DataFrame({"task calls": task_calls,
                                "total memories": total_memories,
-                               "start times": start_times,
                                "max memory usages": max_memory_usages})
 
     if len(task_calls) > 0:
@@ -98,7 +101,7 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
     fig = plt.figure()
     fig.tight_layout()
     fig.suptitle("Memory Usage of " + parent_workflow_name + " '" + cromwell_id + "'")
-    bars_index = np.arange(len(calls_dict["calls"]))
+    bars_index = np.arange(len(task_calls))
 
     # set up left axis
     ax1 = fig.add_subplot(111)
