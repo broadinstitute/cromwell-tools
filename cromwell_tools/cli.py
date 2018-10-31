@@ -1,5 +1,4 @@
 import argparse
-import _io
 from cromwell_tools.cromwell_api import CromwellAPI
 from cromwell_tools.cromwell_auth import CromwellAuth
 
@@ -45,20 +44,20 @@ def parser(arguments=None):
                        help='Path to the JSON key file(service account key) for authenticating with CaaS.')
 
     # submit arguments
-    submit.add_argument('--wdl-file', dest='wdl_file', type=_io.BytesIO, required=True,
-                        help='The workflow source file to submit for execution.')
-    submit.add_argument('--inputs-file', dest='inputs_file', type=_io.BytesIO, required=True,
-                        help='File-like object containing input data in JSON format.')
-    submit.add_argument('--zip-file', dest='zip_file', type=_io.BytesIO,
+    submit.add_argument('--wdl-file', dest='wdl_file', type=argparse.FileType('r', encoding='UTF-8'),
+                        required=True, help='The workflow source file to submit for execution.')
+    submit.add_argument('--inputs-file', dest='inputs_file', type=argparse.FileType('r', encoding='UTF-8'),
+                        required=True, help='File-like object containing input data in JSON format.')
+    submit.add_argument('--zip-file', dest='zip_file', type=argparse.FileType('r', encoding='UTF-8'),
                         help='Zip file containing dependencies.')
-    submit.add_argument('--inputs-file2', dest='inputs_file2', type=_io.BytesIO,
+    submit.add_argument('--inputs-file2', dest='inputs_file2', type=argparse.FileType('r', encoding='UTF-8'),
                         help='Inputs file 2.')
-    submit.add_argument('--options-file', dest='options_file', type=_io.BytesIO,
+    submit.add_argument('--options-file', dest='options_file', type=argparse.FileType('r', encoding='UTF-8'),
                         help='Cromwell configs file.')
 
     submit.add_argument('--collection-name', dest='collection_name', type=str, default=None,
                         help='Collection in SAM that the workflow should belong to, if use CaaS.')
-    submit.add_argument('--label', dest='label', type=_io.BytesIO, default=None,
+    submit.add_argument('--label', dest='label', type=argparse.FileType('r', encoding='UTF-8'), default=None,
                         help='JSON file containing a collection of key/value pairs for workflow labels.')
     submit.add_argument('--validate-labels', dest='validate_labels', type=bool, default=False,
                         help='Whether to validate cromwell labels.')
