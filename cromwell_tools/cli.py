@@ -106,4 +106,4 @@ def parser(arguments=None):
 # this should just getattr from CromwellAPI and call the func with args.
 def main(arguments=None):
     command, args = parser(arguments)
-    command(**args)
+    print(command(**args))
