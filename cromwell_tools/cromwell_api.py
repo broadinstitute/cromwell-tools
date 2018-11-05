@@ -12,7 +12,9 @@ import tempfile
 from datetime import datetime, timedelta
 from subprocess import PIPE, Popen
 from tenacity import retry, stop_after_delay, wait_exponential
+import warnings
 
+from cromwell_tools import utilities
 from cromwell_tools.utilities import _localize_file, validate_cromwell_label
 
 
@@ -128,29 +130,32 @@ class CromwellAPI(object):
 
     @classmethod
     @retry(reraise=True, wait=wait_exponential(multiplier=1, max=10), stop=stop_after_delay(20))
-    def submit(cls, auth, wdl_file, inputs_file, options_file=None, inputs_file2=None, zip_file=None,
-               collection_name=None, label=None, validate_labels=False, on_hold=False):
-        # TODO: Allow more inputs files rather 2 to be consistent with the Cromwell API.
+    def submit(cls, auth, wdl_file, inputs_files=None, options_file=None, dependencies=None,
+               label_file=None, collection_name=None, on_hold=False, validate_labels=False):
         # TODO: Add `raise_for_status` flag to this method and remove the hard-coded `raise_for_status()` call.
         # TODO: Purifying the methods by taking the specific retry policy out from this method.
-        # TODO: Add back `prepare_workflow_manifest` to simplify this method and allow file paths as inputs.
         """ Submits a workflow to Cromwell.
 
         Args:
             auth (cromwell_tools.cromwell_auth.CromwellAuth): authentication class holding auth information to a
                 Cromwell server.
-            wdl_file (_io.BytesIO): The workflow source file to submit for execution. From version 35,
-                Cromwell starts to accept URL to the WDL file besides actual WDL files.
-            inputs_file (_io.BytesIO): File-like object containing input data in JSON format.
-            options_file (Optional[_io.BytesIO]): Cromwell configs file.
-            inputs_file2 (Optional[_io.BytesIO]): Inputs file 2.
-            zip_file (Optional[_io.BytesIO]): Zip file containing dependencies.
+            wdl_file (Union[str, io.BytesIO]): The workflow source file to submit for execution. Could be either the
+                path to the file (str) or the file content in io.BytesIO.
+            inputs_files (Optional[Union[List[Union[str, io.BytesIO]], str, io.BytesIO]]): The input data in JSON
+                format. Could be either the path to the file (str) or the file content in io.BytesIO. This could also
+                be a list of unlimited input file paths/contents, each of them should have a type of
+                Union[str, io.BytesIO]. (default None)
+            options_file (Optional[Union[str, io.BytesIO]]): The Cromwell options file for workflows. Could be either
+                the path to the file (str) or the file content in io.BytesIO. (default None)
+            dependencies (Optional[Union[str, List[str], io.BytesIO]]): Workflow dependency files. Could be the path to
+                the zipped file (str) containing dependencies, a list of paths(List[str]) to all dependency files to be
+                zipped or a zipped file in io.BytesIO. (default None)
+            label_file(Optional[Union[str, _io.BytesIO]]): JSON file containing a collection of key/value pairs for
+                workflow labels. (default None)
             collection_name (Optional[str]): Collection in SAM that the workflow should belong to, if use CaaS. (
                 default None)
-            label (Optional[Union[str, _io.BytesIO]]): JSON file containing a collection of
-                key/value pairs for workflow labels. (default None) # TODO: verify these types are accurate
+            on_hold: (Optional[bool]) Whether to submit the workflow in "On Hold" status. (default False)
             validate_labels (Optional[bool]) If True, validate cromwell labels. (default False)
-            on_hold (Optional[bool]) Whether to submit the workflow in "On Hold" status. (default False)
 
         Raises:
             requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
@@ -159,27 +164,22 @@ class CromwellAPI(object):
         Returns:
             requests.Response: HTTP response from Cromwell.
         """
-        if validate_labels and label is not None:
-            validate_cromwell_label(label)
+        submission_manifest = utilities.prepare_workflow_manifest(wdl_file=wdl_file,
+                                                                  inputs_files=inputs_files,
+                                                                  options_file=options_file,
+                                                                  dependencies=dependencies,
+                                                                  label_file=label_file,
+                                                                  collection_name=collection_name,
+                                                                  on_hold=on_hold)
 
-        files = {
-            'workflowSource': wdl_file,
-            'workflowInputs': inputs_file,
-            'workflowOnHold': json.dumps(on_hold)
-        }
+        if validate_labels and label_file is not None:
+            validate_cromwell_label(submission_manifest['labels'])
 
-        if inputs_file2 is not None:
-            files['workflowInputs_2'] = inputs_file2
-        if zip_file is not None:
-            files['workflowDependencies'] = zip_file
-        if options_file is not None:
-            files['workflowOptions'] = options_file
-        if label:
-            files['labels'] = label
-        if collection_name:
-            files['collectionName'] = collection_name
+        response = requests.post(auth.url + cls._submit_endpoint,
+                                 files=submission_manifest,
+                                 auth=auth.auth,
+                                 headers=auth.header)
 
-        response = requests.post(auth.url + cls._submit_endpoint, files=files, auth=auth.auth, headers=auth.header)
         response.raise_for_status()
         return response
 
@@ -283,7 +283,13 @@ class CromwellAPI(object):
         Returns:
             response (requests.Response): HTTP response from Cromwell.
         """
+        if 'additionalQueryResultFields' in query_dict.keys() or 'includeSubworkflows' in query_dict.keys():
+            warnings.warn('Note: additionalQueryResultFields, includeSubworkflows may not scale due to the following '
+                          'issues with Cromwell: https://github.com/broadinstitute/cromwell/issues/3115 and '
+                          'https://github.com/broadinstitute/cromwell/issues/3873', RuntimeWarning)
+
         query_params = cls._compose_query_params(query_dict)
+
         response = requests.post(url=auth.url + cls._query_endpoint,
                                  json=query_params,
                                  auth=auth.auth,

@@ -22,6 +22,28 @@ _CROMWELL_LABEL_KEY_REGEX = '[a-z]([-a-z0-9]*[a-z0-9])?'
 _CROMWELL_LABEL_VALUE_REGEX = '([a-z0-9]*[-a-z0-9]*[a-z0-9])?'
 
 
+def _emulate_python_fullmatch(regex, string, flags=0):
+    """Backport Python 3.4's regular expression "fullmatch()" to Python 2 by emulating python-3.4 re.fullmatch().
+
+    If the whole string matches the regular expression pattern, return a corresponding match object. Return None
+    if the string does not match the pattern; note that this is different from a zero-length match.
+
+    Args:
+        regex (str): A regex string.
+        string (str): The string that you want to apply regex match to.
+        flags (str or int): The expression's behaviour can be modified by specifying a flags value. Values can be any of
+            the variables listed in https://docs.python.org/3/library/re.html
+
+    Returns:
+        (_sre.SRE_Match or None): A matched object, or None if the string does not match the pattern.
+    """
+    return re.match("(?:" + regex + r")\Z", string, flags=flags)
+
+
+if not "fullmatch" in dir(re):  # For Python3.4+
+    re.fullmatch = _emulate_python_fullmatch
+
+
 def download_to_map(urls):
     """Reads contents from each url into memory and returns a map of urls to their contents.
 
@@ -70,11 +92,17 @@ def download(url):
     and read from the local file system.
 
     Args:
-        url (str): The url to the content to be downloaded.
+        url (str): The url to the content to be downloaded, or the path to the local file.
 
     Returns:
         (bytes or str): Downloaded content in str or bytes format.
+
+    Raises:
+        TypeError: If the url is not a str type.
     """
+    if not isinstance(url, str):
+        raise TypeError('The url/path must be a (str) type, not {}!'.format(type(url)))
+
     if url.startswith('http'):
         return download_http(url)
     else:
@@ -106,10 +134,9 @@ def read_local_file(path):
         path (str): Path to the local file to be loaded.
 
     Returns:
-        contents (str): The loaded content. In Python3 and Python2, this will be a str type since we don't use
-            binary mode in open() here.
+        contents (bytes or str): The loaded content. bytes in Python3 and str in Python2.
     """
-    with open(path) as f:
+    with open(path, 'rb') as f:
         contents = f.read()
     return contents
 
@@ -150,10 +177,7 @@ def _content_checker(regex, content):
     Returns:
         str: A string of error message if validation fails, or an empty string if validation succeeds.
     """
-    if "fullmatch" in dir(re):  # For Python3.4+
-        matched = re.fullmatch(regex, content)
-    else:  # For Python3.3/2.7 or earlier versions
-        matched = _emulate_python_fullmatch(regex, content)
+    matched = re.fullmatch(regex, content)
 
     if not matched:
         return 'Invalid label: {0} did not match the regex {1}.\n'.format(content, regex)
@@ -175,24 +199,6 @@ def _length_checker(length, content):
         return 'Invalid label: {0} has {1} characters. The maximum is {2}.\n'.format(content, len(content), length)
     else:
         return ''
-
-
-def _emulate_python_fullmatch(regex, string, flags=0):
-    """Backport Python 3.4's regular expression "fullmatch()" to Python 2 by emulating python-3.4 re.fullmatch().
-
-    If the whole string matches the regular expression pattern, return a corresponding match object. Return None
-    if the string does not match the pattern; note that this is different from a zero-length match.
-
-    Args:
-        regex (str): A regex string.
-        string (str): The string that you want to apply regex match to.
-        flags (str or int): The expression's behaviour can be modified by specifying a flags value. Values can be any of
-            the variables listed in https://docs.python.org/3/library/re.html
-
-    Returns:
-        (_sre.SRE_Match or None): A matched object, or None if the string does not match the pattern.
-    """
-    return re.match("(?:" + regex + r")\Z", string, flags=flags)
 
 
 def validate_cromwell_label(label_object):
@@ -232,3 +238,100 @@ def validate_cromwell_label(label_object):
 
     if err_msg != '':
         raise ValueError(err_msg)
+
+
+def prepare_workflow_manifest(wdl_file, inputs_files=None, options_file=None, dependencies=None, label_file=None,
+                              collection_name=None, on_hold=False):
+    """Prepare the submission manifest for a workflow submission.
+
+    Args:
+        wdl_file (Union[str, io.BytesIO]): The workflow source file to submit for execution. Could be either the path
+            to the file (str) or the file content in io.BytesIO.
+        inputs_files (Optional[Union[List[Union[str, io.BytesIO]], str, io.BytesIO]]): The input data in JSON
+            format. Could be either the path to the file (str) or the file content in io.BytesIO. This could also
+            be a list of unlimited input file paths/contents, each of them should have a type of
+            Union[str, io.BytesIO]. (default None)
+        options_file (Optional[Union[str, io.BytesIO]]): The Cromwell options file for workflows. Could be either
+        the path to the file (str) or the file content in io.BytesIO. (default None)
+        dependencies (Optional[Union[str, List[str], io.BytesIO]]): Workflow dependency files. Could be the path to
+            the zipped file (str) containing dependencies, a list of paths(List[str]) to all dependency files to be
+            zipped or a zipped file in io.BytesIO. (default None)
+        label_file(Optional[Union[str, _io.BytesIO]]): JSON file containing a collection of key/value pairs for workflow
+            labels. (default None)
+        collection_name (Optional[str]): Collection in SAM that the workflow should belong to, if use CaaS. (
+            default None)
+        on_hold: (Optional[bool]) Whether to submit the workflow in "On Hold" status. (default False)
+
+    Returns:
+        workflow_manifest (dict): A dictionary representing the workflow manifest ready for workflow submission.
+
+    Raises:
+        ValueError: If a str ing of path to the dependencies is given but not endswith ".zip".
+    """
+    workflow_manifest = {}
+
+    # Compose WDL source file
+    workflow_manifest['workflowSource'] = _download_to_BytesIO_if_string(wdl_file)
+
+    # Compose WDL inputs
+    if inputs_files:
+        if not isinstance(inputs_files, list):
+            inputs_files = [inputs_files]
+
+        for idx, inputs_file in enumerate(inputs_files):
+            if idx == 0:
+                # Compose WDL inputs 1
+                input_file_key = 'workflowInputs'
+            else:
+                # Compose other WDL inputs (from 2 - many)
+                input_file_key = 'workflowInputs_{X}'.format(X=idx+1)
+
+            workflow_manifest[input_file_key] = _download_to_BytesIO_if_string(inputs_file)
+
+    # Compose WDL options
+    if options_file:
+        workflow_manifest['workflowOptions'] = _download_to_BytesIO_if_string(options_file)
+
+    # Compose WDL labels
+    if label_file:
+        workflow_manifest['labels'] = _download_to_BytesIO_if_string(label_file)
+
+    # Compose WDL dependencies
+    if dependencies:
+        if isinstance(dependencies, list):
+            zip_file = make_zip_in_memory(download_to_map(dependencies))
+        elif isinstance(dependencies, str) and not dependencies.endswith('.zip'):
+            raise ValueError('The dependency file path must point to a ".zip" file!')
+        else:
+            zip_file = _download_to_BytesIO_if_string(dependencies)
+        workflow_manifest['workflowDependencies'] = zip_file
+
+    # Compose collection name (if use CaaS)
+    if collection_name:
+        workflow_manifest['collectionName'] = collection_name
+
+    # Compose the On Hold switch for workflow submission
+    workflow_manifest['workflowOnHold'] = json.dumps(on_hold)
+
+    return workflow_manifest
+
+
+def _download_to_BytesIO_if_string(file):
+    """Download a file if given a string of the file path or return the input if it's in io.BytesIO.
+
+    Args:
+        file (Union[str, io.BytesIO]): A string of the path to the file or the file content in io.BytesIO.
+
+    Returns:
+        io.BytesIO: File content in io.BytesIO.
+
+    Raises:
+        TypeError: If the input is not a str nor io.BytesIO.
+    """
+    # TODO: add validation for JSON files
+    if isinstance(file, str):
+        return io.BytesIO(download(file))
+    elif isinstance(file, io.BytesIO) or not file:
+        return file
+    else:
+        raise TypeError('Please make sure to pass in Union[str, io.BytesIO] types!')
