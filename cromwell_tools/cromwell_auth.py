@@ -138,7 +138,7 @@ class CromwellAuth:
 
     @classmethod
     def harmonize_credentials(
-            cls, username=None, password=None, url=None, secrets_file=None, caas_key=None):
+            cls, username=None, password=None, url=None, secrets_file=None, service_account_key=None):
         """Parse and harmonize user inputted credentials and generate proper authentication object for cromwell-tools.
 
         Args:
@@ -151,7 +151,7 @@ class CromwellAuth:
                     "password": "",
                     "url": ""
                 }
-            caas_key (str): Path to the JSON key file(service account key) for authenticating with CaaS.
+            service_account_key (str): Path to the JSON key file(service account key) for authenticating with CaaS.
 
         Returns:
             CromwellAuth: An instance of this auth helper class with proper credentials for authenticating with
@@ -159,7 +159,7 @@ class CromwellAuth:
         """
         # verify only one credential provided
         credentials = {
-            "caas_key": True if caas_key else False,
+            "service_account_key": True if service_account_key else False,
             "secrets_file": True if secrets_file else False,
             "user_password": True if all((username, password, url)) else False
         }
@@ -168,8 +168,8 @@ class CromwellAuth:
                     "Exactly one set of credentials must be passed.\nCredentials: {}".format(
                             repr(credentials)))
 
-        if credentials["caas_key"]:
-            return cls.from_service_account_key_file(caas_key, url)
+        if credentials["service_account_key"]:
+            return cls.from_service_account_key_file(service_account_key, url)
         if credentials["secrets_file"]:
             return cls.from_secrets_file(secrets_file)
         if credentials["user_password"]:

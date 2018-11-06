@@ -10,7 +10,7 @@ from cromwell_tools.cromwell_auth import CromwellAuth
 def setup_auth_types():
     temp_dir = tempfile.mkdtemp()
     secrets_file = os.path.join(temp_dir, 'fake_secrets.json')
-    caas_key_file = os.path.join(temp_dir, 'fake_key.json')
+    service_account_key = os.path.join(temp_dir, 'fake_key.json')
     username = "fake_user"
     password = "fake_password"
     url = "https://fake_url"
@@ -24,7 +24,7 @@ def setup_auth_types():
         json.dump(auth_params, f)
 
     auth_params['secrets_file'] = {"secrets_file": secrets_file}
-    auth_params['caas_key'] = {"caas_key": caas_key_file, "url": url}
+    auth_params['service_account_key'] = {"service_account_key": service_account_key, "url": url}
     return auth_params
 
 
@@ -66,5 +66,5 @@ def test_harmonize_credentials_from_service_account_key(mock_header):
     url = 'https://cromwell.server.org'
     expected_auth = CromwellAuth(url=url, header={"Authorization": "bearer fake_token"}, auth=None)
     mock_header.return_value = expected_auth
-    auth = CromwellAuth.harmonize_credentials(url=url, caas_key=service_account_key)
+    auth = CromwellAuth.harmonize_credentials(url=url, service_account_key=service_account_key)
     assert auth == expected_auth
