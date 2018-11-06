@@ -1,5 +1,4 @@
 import argparse
-import _io
 from cromwell_tools.cromwell_api import CromwellAPI
 from cromwell_tools.cromwell_auth import CromwellAuth
 
@@ -39,26 +38,26 @@ def parser(arguments=None):
                        help='Cromwell username for HTTPBasicAuth.')
         p.add_argument('--password', default=None, type=str,
                        help='Cromwell password for HTTPBasicAuth.')
-        p.add_argument('--secrets-file', default=None, type=str,
+        p.add_argument('--secrets-file', dest='secrets_file', default=None, type=str,
                        help='Path to the JSON file containing username, password, and url fields.')
-        p.add_argument('--caas-key', default=None, type=str,
+        p.add_argument('--caas-key', dest='caas_key', default=None, type=str,
                        help='Path to the JSON key file(service account key) for authenticating with CaaS.')
 
     # submit arguments
-    submit.add_argument('--wdl-file', dest='wdl_file', type=_io.BytesIO, required=True,
+    submit.add_argument('--wdl-file', dest='wdl_file', type=argparse.FileType('r'), required=True,
                         help='The workflow source file to submit for execution.')
-    submit.add_argument('--inputs-file', dest='inputs_file', type=_io.BytesIO, required=True,
+    submit.add_argument('--inputs-file', dest='inputs_file', type=argparse.FileType('r'), required=True,
                         help='File-like object containing input data in JSON format.')
-    submit.add_argument('--zip-file', dest='zip_file', type=_io.BytesIO,
+    submit.add_argument('--zip-file', dest='zip_file', type=argparse.FileType('r'),
                         help='Zip file containing dependencies.')
-    submit.add_argument('--inputs-file2', dest='inputs_file2', type=_io.BytesIO,
+    submit.add_argument('--inputs-file2', dest='inputs_file2', type=argparse.FileType('r'),
                         help='Inputs file 2.')
-    submit.add_argument('--options-file', dest='options_file', type=_io.BytesIO,
+    submit.add_argument('--options-file', dest='options_file', type=argparse.FileType('r'),
                         help='Cromwell configs file.')
 
     submit.add_argument('--collection-name', dest='collection_name', type=str, default=None,
                         help='Collection in SAM that the workflow should belong to, if use CaaS.')
-    submit.add_argument('--label', dest='label', type=_io.BytesIO, default=None,
+    submit.add_argument('--label', dest='label', type=argparse.FileType('r'), default=None,
                         help='JSON file containing a collection of key/value pairs for workflow labels.')
     submit.add_argument('--validate-labels', dest='validate_labels', type=bool, default=False,
                         help='Whether to validate cromwell labels.')
@@ -92,8 +91,13 @@ def parser(arguments=None):
     args = vars(main_parser.parse_args(arguments))
     # TODO: see if this can be moved or if the commands can be populated from above
     if args['command'] in ('submit', 'wait', 'status', 'abort', 'release_hold', 'health', 'validate'):
-        auth = CromwellAuth.harmonize_credentials(**args)
+        auth_args = ['username', 'password', 'url', 'secrets_file', 'caas_key']
+        auth_arg_dict = {k: args.get(k) for k in auth_args}
+        auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)
         args['auth'] = auth
+        for k in auth_args:
+            if k in args:
+                del args[k]
     command = getattr(CromwellAPI, args['command'])
     del args['command']
     return command, args
@@ -102,4 +106,4 @@ def parser(arguments=None):
 # this should just getattr from CromwellAPI and call the func with args.
 def main(arguments=None):
     command, args = parser(arguments)
-    command(**args)
+    print(command(**args))
