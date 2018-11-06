@@ -40,8 +40,8 @@ def parser(arguments=None):
                        help='Cromwell password for HTTPBasicAuth.')
         p.add_argument('--secrets-file', dest='secrets_file', default=None, type=str,
                        help='Path to the JSON file containing username, password, and url fields.')
-        p.add_argument('--caas-key', dest='caas_key', default=None, type=str,
-                       help='Path to the JSON key file(service account key) for authenticating with CaaS.')
+        p.add_argument('--service_account_key', default=None, type=str,
+                       help='Path to the JSON key file for authenticating with CaaS.')
 
     # submit arguments
     submit.add_argument('--wdl-file', dest='wdl_file', type=argparse.FileType('r'), required=True,

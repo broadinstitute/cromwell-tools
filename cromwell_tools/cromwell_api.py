@@ -286,7 +286,7 @@ class CromwellAPI(object):
         if 'additionalQueryResultFields' in query_dict.keys() or 'includeSubworkflows' in query_dict.keys():
             warnings.warn('Note: additionalQueryResultFields, includeSubworkflows may not scale due to the following '
                           'issues with Cromwell: https://github.com/broadinstitute/cromwell/issues/3115 and '
-                          'https://github.com/broadinstitute/cromwell/issues/3873', RuntimeWarning)
+                          'https://github.com/broadinstitute/cromwell/issues/3873', UserWarning)
 
         query_params = cls._compose_query_params(query_dict)
 
