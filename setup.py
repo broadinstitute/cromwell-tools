@@ -14,7 +14,7 @@ CLASSIFIERS = [
 ]
 
 install_requires = [
-    'requests>=2.19.1',
+    'requests>=2.20.0',
     'six>=1.11.0',
     'oauth2client>=4.1.2',
     'tenacity>=4.10.0',
