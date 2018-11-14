@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import requests
@@ -6,7 +7,6 @@ import six
 import tempfile
 import unittest
 import zipfile
-import pytest
 
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
@@ -20,20 +20,46 @@ class TestUtilities(unittest.TestCase):
         # Change to test directory, as tests may have been invoked from another dir
         dir_ = os.path.abspath(os.path.dirname(__file__))
         os.chdir(dir_)
-        cls.invalid_labels = {
+
+    @staticmethod
+    def _load_test_data_as_BytesIO(path):
+        with open(path, 'rb') as fp:
+            stream = io.BytesIO(fp.read())
+        return stream
+
+    def setUp(self):
+        self.invalid_labels = {
             "0-label-key-1": "0-label-value-1",
             "the-maximum-allowed-character-length-for-label-pairs-is-sixty-three":
                 "cromwell-please-dont-validate-these-labels",
             "": "not a great label key",
             "Comment": "This-is-a-test-label"
         }
-        cls.valid_labels = {
+        self.valid_labels = {
             "label-key-1": "label-value-1",
             "label-key-2": "label-value-2",
             "only-key": "",
             "fc-id": "0123-abcd-4567-efgh",
             "comment": "this-is-a-test-label"
         }
+        self.wdl_file_path = 'data/test_workflow.wdl'
+        self.wdl_file_BytesIO = self._load_test_data_as_BytesIO(self.wdl_file_path)
+
+        self.inputs_file_path = 'data/test_inputs1.json'
+        self.inputs_file_BytesIO = self._load_test_data_as_BytesIO(self.inputs_file_path)
+
+        self.inputs_file_path_list = ['data/test_inputs1.json', 'data/test_inputs2.json']
+        self.inputs_file_BytesIO_list = [self._load_test_data_as_BytesIO(f) for f in self.inputs_file_path_list]
+
+        self.options_file_path = 'data/test_options.json'
+        self.options_file_BytesIO = self._load_test_data_as_BytesIO(self.options_file_path)
+
+        self.label_file_path = 'data/test_labels.json'
+        self.label_file_BytesIO = self._load_test_data_as_BytesIO(self.label_file_path)
+
+        self.deps_zip_file_path = 'data/test_deps.zip'
+        self.deps_files_paths_list = ['data/test_task.wdl']
+        self.deps_zip_file_BytesIO = self._load_test_data_as_BytesIO(self.deps_zip_file_path)
 
     @requests_mock.mock()
     def test_download_http_raises_error_on_bad_status_code(self, mock_request):
@@ -83,8 +109,8 @@ class TestUtilities(unittest.TestCase):
         urls_to_content = utils.download_to_map(urls)
         self.assertIn('data/a.txt', urls_to_content)
         self.assertIn('data/b.txt', urls_to_content)
-        self.assertEqual(urls_to_content['data/a.txt'], 'aaa\n')
-        self.assertEqual(urls_to_content['data/b.txt'], 'bbb\n')
+        self.assertEqual(urls_to_content['data/a.txt'], b'aaa\n')
+        self.assertEqual(urls_to_content['data/b.txt'], b'bbb\n')
 
     def test_make_zip_in_memory(self):
         """Test make_zip_in_memory produces an in-memory zip file with the expected contents"""
@@ -139,3 +165,161 @@ class TestUtilities(unittest.TestCase):
         assert os.path.isfile(localized_file)
         with open(localized_file, 'r') as f:
             assert 'cromwell_tools' in f.read()
+
+    def test_prepare_workflow_manifest_works_for_wdl_file_with_filepath(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowSource'].getvalue() == expected_manifest['workflowSource'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_wdl_file_with_BytesIO(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_BytesIO)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowSource'].getvalue() == expected_manifest['workflowSource'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_one_inputs_file_with_filepath(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   inputs_files=self.inputs_file_path)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowInputs': self.inputs_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowInputs'].getvalue() == expected_manifest['workflowInputs'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_one_inputs_file_with_BytesIO(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   inputs_files=self.inputs_file_BytesIO)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowInputs': self.inputs_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowInputs'].getvalue() == expected_manifest['workflowInputs'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_multiple_inputs_files_with_filepath(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   inputs_files=self.inputs_file_path_list)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowInputs': self.inputs_file_BytesIO_list[0],
+            'workflowInputs_2': self.inputs_file_BytesIO_list[1],
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowInputs'].getvalue() == expected_manifest['workflowInputs'].getvalue()
+        assert manifest['workflowInputs_2'].getvalue() == expected_manifest['workflowInputs_2'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_multiple_inputs_files_with_BytesIO(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   inputs_files=self.inputs_file_BytesIO_list)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowInputs': self.inputs_file_BytesIO_list[0],
+            'workflowInputs_2': self.inputs_file_BytesIO_list[1],
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowInputs'].getvalue() == expected_manifest['workflowInputs'].getvalue()
+        assert manifest['workflowInputs_2'].getvalue() == expected_manifest['workflowInputs_2'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_dependencies_file_with_filepath(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   dependencies=self.deps_zip_file_path)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowDependencies': self.deps_zip_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowDependencies'].getvalue() == expected_manifest['workflowDependencies'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_dependencies_file_with_list_of_files(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   dependencies=self.deps_files_paths_list)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowDependencies': self.deps_zip_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        with zipfile.ZipFile(manifest['workflowDependencies'], 'r') as zf:
+            with zf.open('test_task.wdl') as dep_file:
+                contents = io.BytesIO(dep_file.read())
+
+        with zipfile.ZipFile(expected_manifest['workflowDependencies'], 'r') as zf:
+            with zf.open('test_task.wdl') as dep_file:
+                expected_contents = io.BytesIO(dep_file.read())
+
+        # we have to unzip both of them to get the proper comparison during the test
+        assert contents.getvalue() == expected_contents.getvalue()
+
+    def test_prepare_workflow_manifest_works_for_dependencies_file_with_BytesIO(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   dependencies=self.deps_zip_file_BytesIO)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowDependencies': self.deps_zip_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowDependencies'].getvalue() == expected_manifest['workflowDependencies'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_collection_name(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path, collection_name='test_collection')
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'collectionName': 'test_collection',
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowSource'].getvalue() == expected_manifest['workflowSource'].getvalue()
+        assert manifest['collectionName'] == expected_manifest['collectionName']
+
+    def test_prepare_workflow_manifest_works_for_on_hold(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path, on_hold=True)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowOnHold': 'true'
+        }
+        assert manifest['workflowSource'].getvalue() == expected_manifest['workflowSource'].getvalue()
+        assert manifest['workflowOnHold'] == expected_manifest['workflowOnHold']
+
+    def test_prepare_workflow_manifest_works_for_label_file_with_filepath(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   label_file=self.label_file_path)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'labels': self.label_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['labels'].getvalue() == expected_manifest['labels'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_label_file_with_BytesIO(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   label_file=self.label_file_BytesIO)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'labels': self.label_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['labels'].getvalue() == expected_manifest['labels'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_options_file_with_filepath(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   options_file=self.options_file_path)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowOptions': self.options_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowOptions'].getvalue() == expected_manifest['workflowOptions'].getvalue()
+
+    def test_prepare_workflow_manifest_works_for_options_file_with_BytesIO(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   options_file=self.options_file_BytesIO)
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowOptions': self.options_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowOptions'].getvalue() == expected_manifest['workflowOptions'].getvalue()

@@ -30,7 +30,6 @@ class TestAPI(unittest.TestCase):
         self.wdl_file = io.BytesIO(b"wdl_file_content")
         self.zip_file = io.BytesIO(b"zip_file_content")
         self.inputs_file = io.BytesIO(b"inputs_file_content")
-        self.inputs_file2 = io.BytesIO(b"inputs_file2_content")
         self.options_file = io.BytesIO(b"options_file_content")
         self.label = io.BytesIO(b'{"test-label-key": "test-label-value"}')
         self.auth_options = self.set_up_auth()
@@ -40,7 +39,7 @@ class TestAPI(unittest.TestCase):
         # set up authentication options for the tests
         temp_dir = tempfile.mkdtemp()
         secrets_file = temp_dir + 'fake_secrets.json'
-        caas_key_file = os.path.join(temp_dir, 'fake_key.json')
+        service_account_key = os.path.join(temp_dir, 'fake_key.json')
         username = "fake_user"
         password = "fake_password"
         url = "https://fake_url"
@@ -56,14 +55,18 @@ class TestAPI(unittest.TestCase):
         auth_options = (
             CromwellAuth.harmonize_credentials(**auth),
             CromwellAuth.harmonize_credentials(**{"secrets_file": secrets_file}),
-            CromwellAuth.harmonize_credentials(**{"caas_key": caas_key_file, "url": url})
+            CromwellAuth.harmonize_credentials(**{"service_account_key": service_account_key, "url": url})
         )
         return auth_options
 
     def _submit_workflows(self, cromwell_auth, mock_request, _request_callback):
         mock_request.post(cromwell_auth.url + '/api/workflows/v1', json=_request_callback)
-        return CromwellAPI.submit(cromwell_auth, self.wdl_file, self.inputs_file, self.options_file,
-                                  self.inputs_file2, self.zip_file, label=self.label)
+        return CromwellAPI.submit(auth=cromwell_auth,
+                                  wdl_file=self.wdl_file,
+                                  inputs_files=self.inputs_file,
+                                  options_file=self.options_file,
+                                  dependencies=self.zip_file,
+                                  label_file=self.label)
 
     @requests_mock.mock()
     def test_submit_workflow(self, mock_request):
