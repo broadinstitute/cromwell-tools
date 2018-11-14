@@ -150,8 +150,9 @@ class CromwellAPI(object):
             dependencies (Optional[Union[str, List[str], io.BytesIO]]): Workflow dependency files. Could be the path to
                 the zipped file (str) containing dependencies, a list of paths(List[str]) to all dependency files to be
                 zipped or a zipped file in io.BytesIO. (default None)
-            label_file(Optional[Union[str, _io.BytesIO]]): JSON file containing a collection of key/value pairs for
-                workflow labels. (default None)
+            label_file(Optional[Union[str, _io.BytesIO]]): A collection of key/value pairs for workflow labels in JSON
+                format, could be either the path to the JSON file (str) or the file content in io.BytesIO.
+                (default None)
             collection_name (Optional[str]): Collection in SAM that the workflow should belong to, if use CaaS. (
                 default None)
             on_hold: (Optional[bool]) Whether to submit the workflow in "On Hold" status. (default False)
