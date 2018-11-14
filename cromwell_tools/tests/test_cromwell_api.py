@@ -39,7 +39,7 @@ class TestAPI(unittest.TestCase):
         # set up authentication options for the tests
         temp_dir = tempfile.mkdtemp()
         secrets_file = temp_dir + 'fake_secrets.json'
-        caas_key_file = os.path.join(temp_dir, 'fake_key.json')
+        service_account_key = os.path.join(temp_dir, 'fake_key.json')
         username = "fake_user"
         password = "fake_password"
         url = "https://fake_url"
@@ -55,7 +55,7 @@ class TestAPI(unittest.TestCase):
         auth_options = (
             CromwellAuth.harmonize_credentials(**auth),
             CromwellAuth.harmonize_credentials(**{"secrets_file": secrets_file}),
-            CromwellAuth.harmonize_credentials(**{"caas_key": caas_key_file, "url": url})
+            CromwellAuth.harmonize_credentials(**{"service_account_key": service_account_key, "url": url})
         )
         return auth_options
 
