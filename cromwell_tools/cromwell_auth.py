@@ -181,11 +181,10 @@ class CromwellAuth:
         """
         # verify only one credential provided
         credentials = {
-            "service_account_key": True if all((service_account_key, url)) else False,
+            "service_account_key": all((service_account_key, url)),
             "secrets_file": True if secrets_file else False,
-            "user_password": True if all((username, password, url)) else False,
-            "no_auth": True if (service_account_key, secrets_file, username, password).count(None) == 4 and
-                               url else False
+            "user_password": all((username, password, url)),
+            "no_auth": True if (not any((service_account_key, secrets_file, username, password)) and url) else False
         }
         if sum(credentials.values()) != 1:
             raise ValueError(
