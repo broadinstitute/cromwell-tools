@@ -32,13 +32,17 @@ The accessory scripts and IPython notebooks are useful to:
 
 Installation
 ============
-Version ``v1.0.0`` will be on `PyPI <https://pypi.org/>`_ but until then we need to install from GitHub:
+From version ``v1.0.0``, you can install cromwell-tools from `PyPI <https://pypi.org/>`_:
 
 .. code:: bash
 
-    pip install "git+git://github.com/broadinstitute/cromwell-tools.git@master#egg=cromwell-tools[test]"
+    pip install cromwell-tools
 
-You can omit [test] at the end of the pip invocation if you don't need the test cases this library provides.
+To install the testing requirements as extras of the library, use:
+
+.. code:: bash
+
+    pip install "cromwell-tools[test]"
 
 Usage
 =====
