@@ -2,7 +2,7 @@ import json
 import requests
 import requests.auth
 import six
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 import warnings
 
 
@@ -98,10 +98,11 @@ class CromwellAuth:
             CromwellAuth: An instance of this auth helper class with valid OAuth Auth header.
         """
         scopes = [
-            'https://www.googleapis.com/auth/userinfo.profile',
-            'https://www.googleapis.com/auth/userinfo.email'
+            'email',
+            'openid',
+            'profile'
         ]
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(service_account_key, scopes=scopes)
+        credentials = service_account.Credentials.from_service_account_file(service_account_key, scopes=scopes)
         header = {"Authorization": "bearer " + credentials.get_access_token().access_token}
         return cls(url=url, header=header, auth=None)
 
