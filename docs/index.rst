@@ -21,7 +21,7 @@ API documentation
 Table of Contents
 =================
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 4
 
 
 * :ref:`genindex`

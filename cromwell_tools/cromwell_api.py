@@ -265,8 +265,8 @@ class CromwellAPI(object):
         Cromwell except a set of necessary ones. However, we need to implement this for completeness and keep an eye
         on the compatibility between CaaS and Cromwell.
 
-        _All of the query keys will be used in an OR manner, except the keys within `labels`, which are defined in
-        an AND relation_ For instance, [{'status': 'Succeeded'}, {'status': 'Failed'}] will give you all of the
+        All of the query keys will be used in an OR manner, except the keys within `labels`, which are defined in
+        an AND relation. For instance, [{'status': 'Succeeded'}, {'status': 'Failed'}] will give you all of the
         workflows that in either `Succeeded` or `Failed` statuses.
 
         Args:
