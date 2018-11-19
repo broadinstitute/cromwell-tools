@@ -56,7 +56,7 @@ In Python, you can import the package with:
     import cromwell_tools.api as cwt
     cwt.submit(*args)
 
-assuming args is a list of arguments needed.
+assuming args is a list of arguments needed. For more details, please check the example `Jupyter Notebooks <https://github.com/broadinstitute/cromwell-tools/tree/master/notebooks/Quickstart>`_.
 
 Commandline Interface
 ---------------------
