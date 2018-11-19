@@ -30,18 +30,21 @@ def parser(arguments=None):
 
     # cromwell url and authentication arguments apply to all sub-commands
     cromwell_sub_commands = [submit, wait, status, health]
+    auth_args = {
+        'url': 'The URL to the Cromwell server. e.g. "https://cromwell.server.org/"',
+        'username':  'Cromwell username for HTTPBasicAuth.',
+        'password': 'Cromwell password for HTTPBasicAuth.',
+        'secrets_file': 'Path to the JSON file containing username, password, and url fields.',
+        'service_account_key': 'Path to the JSON key file for authenticating with CaaS.'
+    }
+
+    def add_auth_args(subcommand_parser):
+        for arg_dest, help_text in auth_args.items():
+            subcommand_parser.add_argument('--{arg}'.format(arg=arg_dest.replace('_', '-')),
+                                           dest=arg_dest, default=None, type=str, help=help_text)
     # todo this should be a group which is called authentication
     for p in cromwell_sub_commands:
-        p.add_argument('--url', default=None, type=str,
-                       help='The URL to the Cromwell server. e.g. "https://cromwell.server.org/"')
-        p.add_argument('--username', default=None, type=str,
-                       help='Cromwell username for HTTPBasicAuth.')
-        p.add_argument('--password', default=None, type=str,
-                       help='Cromwell password for HTTPBasicAuth.')
-        p.add_argument('--secrets-file', dest='secrets_file', default=None, type=str,
-                       help='Path to the JSON file containing username, password, and url fields.')
-        p.add_argument('--service_account_key', default=None, type=str,
-                       help='Path to the JSON key file for authenticating with CaaS.')
+        add_auth_args(p)
 
     # submit arguments
     submit.add_argument('--wdl-file', dest='wdl_file', type=argparse.FileType('r'), required=True,
@@ -91,8 +94,7 @@ def parser(arguments=None):
     args = vars(main_parser.parse_args(arguments))
     # TODO: see if this can be moved or if the commands can be populated from above
     if args['command'] in ('submit', 'wait', 'status', 'abort', 'release_hold', 'health', 'validate'):
-        auth_args = ['username', 'password', 'url', 'secrets_file', 'caas_key']
-        auth_arg_dict = {k: args.get(k) for k in auth_args}
+        auth_arg_dict = {k: args.get(k) for k in auth_args.keys()}
         auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)
         args['auth'] = auth
         for k in auth_args:
