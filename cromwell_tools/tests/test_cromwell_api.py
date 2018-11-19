@@ -53,9 +53,10 @@ class TestAPI(unittest.TestCase):
         mock_header.return_value = CromwellAuth(url=url, header={"Authorization": "bearer fake_token"}, auth=None)
 
         auth_options = (
-            CromwellAuth.harmonize_credentials(**auth),
-            CromwellAuth.harmonize_credentials(**{"secrets_file": secrets_file}),
-            CromwellAuth.harmonize_credentials(**{"service_account_key": service_account_key, "url": url})
+            CromwellAuth.harmonize_credentials(**auth),  # HTTPBasicAuth
+            CromwellAuth.harmonize_credentials(**{"secrets_file": secrets_file}),  # Secret file
+            CromwellAuth.harmonize_credentials(**{"service_account_key": service_account_key, "url": url}),  # OAuth
+            CromwellAuth.harmonize_credentials(url=url)  # No Auth
         )
         return auth_options
 

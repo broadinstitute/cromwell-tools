@@ -2,10 +2,16 @@ import json
 import requests
 import requests.auth
 import six
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
+import google.auth.transport.requests
+import warnings
 
 
 class AuthenticationError(Exception):
+    pass
+
+
+class NoAuthenticationWarning(UserWarning):
     pass
 
 
@@ -42,17 +48,20 @@ class CromwellAuth:
                 i.e. username and password.
 
         Raises:
-            TypeError: when no credentials are provided or auth is not a valid HTTPBasicAuth object.
+            TypeError: when header is not a valid `dict` or the auth object is not a valid
+                `requests.auth.HTTPBasicAuth` object.
             ValueError: when the header is not a valid header(with Bearer token).
         """
         if not header and not auth:
-            raise ValueError("Either a header containing bearer token or a HTTPBasic Auth object must be passed.")
+            warnings.warn('You are not using any authentication with Cromwell. For security purposes, '
+                          'please consider adding authentication in front of your Cromwell instance!',
+                          NoAuthenticationWarning)
 
         if header:
             if not isinstance(header, dict):
                 raise TypeError('If passed, header must be a dict.')
-            if "Authorization" not in header.keys():
-                raise TypeError('The header must have an "Authorization" key')
+            if "authorization" not in [k.lower() for k in header.keys()]:
+                raise ValueError('The header must have an "Authorization" or "authorization" key!')
 
         if auth and not isinstance(auth, requests.auth.HTTPBasicAuth):
             raise TypeError('The auth object must be a valid "requests.auth.HTTPBasicAuth" object!')
@@ -73,7 +82,7 @@ class CromwellAuth:
         if isinstance(url, six.string_types) and url.startswith('http'):
             return str(url.strip('/'))
         else:
-            raise ValueError("url must be an str that points to an http(s) endpoint.")
+            raise ValueError("url must be an str pointing to an http(s) endpoint.")
 
     @classmethod
     def from_service_account_key_file(cls, service_account_key, url):
@@ -90,11 +99,16 @@ class CromwellAuth:
             CromwellAuth: An instance of this auth helper class with valid OAuth Auth header.
         """
         scopes = [
-            'https://www.googleapis.com/auth/userinfo.profile',
-            'https://www.googleapis.com/auth/userinfo.email'
+            'email',
+            'openid',
+            'profile'
         ]
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(service_account_key, scopes=scopes)
-        header = {"Authorization": "bearer " + credentials.get_access_token().access_token}
+        credentials = service_account.Credentials.from_service_account_file(service_account_key, scopes=scopes)
+        if not credentials.valid:
+            credentials.refresh(google.auth.transport.requests.Request())
+            credentials.get_access_token()
+        header = {}
+        credentials.apply(header)
         return cls(url=url, header=header, auth=None)
 
     @classmethod
@@ -137,21 +151,34 @@ class CromwellAuth:
         return cls(url=url, header=None, auth=auth)
 
     @classmethod
+    def from_no_authentication(cls, url):
+        """Generate an authentication object which does use any auth methods.
+
+        Args:
+            url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+
+        Returns:
+            CromwellAuth: An instance of this auth helper class with url and has no auth methods.
+        """
+        return cls(url=url, header=None, auth=None)
+
+    @classmethod
     def harmonize_credentials(
             cls, username=None, password=None, url=None, secrets_file=None, service_account_key=None):
         """Parse and harmonize user inputted credentials and generate proper authentication object for cromwell-tools.
 
         Args:
-            username (str): Cromwell username for HTTPBasicAuth.
-            password (str): Cromwell password for HTTPBasicAuth.
-            url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
-            secrets_file (str): Path to the JSON file containing username, password, and url fields. e.g.
+            username (str or None): Cromwell username for HTTPBasicAuth.
+            password (str or None): Cromwell password for HTTPBasicAuth.
+            url (str or None): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+            secrets_file (str or None): Path to the JSON file containing username, password, and url fields. e.g.
                 {
                     "username": "",
                     "password": "",
                     "url": ""
                 }
-            service_account_key (str): Path to the JSON key file(service account key) for authenticating with CaaS.
+            service_account_key (str or None): Path to the JSON key file(service account key) for authenticating
+                with CaaS or any Cromwell instances that using OAuth.
 
         Returns:
             CromwellAuth: An instance of this auth helper class with proper credentials for authenticating with
@@ -159,9 +186,10 @@ class CromwellAuth:
         """
         # verify only one credential provided
         credentials = {
-            "service_account_key": True if service_account_key else False,
+            "service_account_key": all((service_account_key, url)),
             "secrets_file": True if secrets_file else False,
-            "user_password": True if all((username, password, url)) else False
+            "user_password": all((username, password, url)),
+            "no_auth": True if (not any((service_account_key, secrets_file, username, password)) and url) else False
         }
         if sum(credentials.values()) != 1:
             raise ValueError(
@@ -174,3 +202,5 @@ class CromwellAuth:
             return cls.from_secrets_file(secrets_file)
         if credentials["user_password"]:
             return cls.from_user_password(username, password, url)
+        if credentials["no_auth"]:
+            return cls.from_no_authentication(url=url)
