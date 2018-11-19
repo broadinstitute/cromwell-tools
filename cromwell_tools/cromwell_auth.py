@@ -3,6 +3,7 @@ import requests
 import requests.auth
 import six
 from google.oauth2 import service_account
+import google.auth.transport.requests
 import warnings
 
 
@@ -59,8 +60,8 @@ class CromwellAuth:
         if header:
             if not isinstance(header, dict):
                 raise TypeError('If passed, header must be a dict.')
-            if "Authorization" not in header.keys():
-                raise ValueError('The header must have an "Authorization" key')
+            if "authorization" not in [k.lower() for k in header.keys()]:
+                raise ValueError('The header must have an "Authorization" or "authorization" key!')
 
         if auth and not isinstance(auth, requests.auth.HTTPBasicAuth):
             raise TypeError('The auth object must be a valid "requests.auth.HTTPBasicAuth" object!')
@@ -103,8 +104,14 @@ class CromwellAuth:
             'profile'
         ]
         credentials = service_account.Credentials.from_service_account_file(service_account_key, scopes=scopes)
-        header = {"Authorization": "bearer " + credentials.get_access_token().access_token}
+        if not credentials.valid:
+            credentials.refresh(google.auth.transport.requests.Request())
+            credentials.get_access_token()
+        header = {}
+        credentials.apply(header)
         return cls(url=url, header=header, auth=None)
+
+    from google.auth.transport.requests import AuthorizedSession
 
     @classmethod
     def from_secrets_file(cls, secrets_file):
