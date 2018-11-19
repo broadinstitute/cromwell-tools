@@ -12,7 +12,6 @@ import tempfile
 from datetime import datetime, timedelta
 from subprocess import PIPE, Popen
 from tenacity import retry, stop_after_delay, wait_exponential
-import warnings
 
 from cromwell_tools import utilities
 from cromwell_tools.utilities import _localize_file, validate_cromwell_label
@@ -285,9 +284,9 @@ class CromwellAPI(object):
             response (requests.Response): HTTP response from Cromwell.
         """
         if 'additionalQueryResultFields' in query_dict.keys() or 'includeSubworkflows' in query_dict.keys():
-            warnings.warn('Note: additionalQueryResultFields, includeSubworkflows may not scale due to the following '
-                          'issues with Cromwell: https://github.com/broadinstitute/cromwell/issues/3115 and '
-                          'https://github.com/broadinstitute/cromwell/issues/3873', UserWarning)
+            logging.warning('Note: additionalQueryResultFields, includeSubworkflows may not scale due to the '
+                            'following issues with Cromwell: https://github.com/broadinstitute/cromwell/issues/3115 '
+                            'and https://github.com/broadinstitute/cromwell/issues/3873')
 
         query_params = cls._compose_query_params(query_dict)
 

@@ -4,14 +4,10 @@ import requests.auth
 import six
 from google.oauth2 import service_account
 import google.auth.transport.requests
-import warnings
+import logging
 
 
 class AuthenticationError(Exception):
-    pass
-
-
-class NoAuthenticationWarning(UserWarning):
     pass
 
 
@@ -53,9 +49,8 @@ class CromwellAuth:
             ValueError: when the header is not a valid header(with Bearer token).
         """
         if not header and not auth:
-            warnings.warn('You are not using any authentication with Cromwell. For security purposes, '
-                          'please consider adding authentication in front of your Cromwell instance!',
-                          NoAuthenticationWarning)
+            logging.warning('You are not using any authentication with Cromwell. For security purposes, '
+                            'please consider adding authentication in front of your Cromwell instance!')
 
         if header:
             if not isinstance(header, dict):
