@@ -111,8 +111,6 @@ class CromwellAuth:
         credentials.apply(header)
         return cls(url=url, header=header, auth=None)
 
-    from google.auth.transport.requests import AuthorizedSession
-
     @classmethod
     def from_secrets_file(cls, secrets_file):
         """Generate an authentication object from a JSON file that contains credentials info for HTTPBasicAuth.
