@@ -271,7 +271,7 @@ class TestAPI(unittest.TestCase):
             return expected
 
         for cromwell_auth in self.auth_options:
-            mock_request.get('{0}/api/engine/v1/status'.format(cromwell_auth.url),
+            mock_request.get('{0}/engine/v1/status'.format(cromwell_auth.url),
                               json=_request_callback)
             result = CromwellAPI.health(cromwell_auth)
             self.assertEqual(result.status_code, 200)
