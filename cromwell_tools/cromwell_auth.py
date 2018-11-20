@@ -101,7 +101,6 @@ class CromwellAuth:
         credentials = service_account.Credentials.from_service_account_file(service_account_key, scopes=scopes)
         if not credentials.valid:
             credentials.refresh(google.auth.transport.requests.Request())
-            credentials.get_access_token()
         header = {}
         credentials.apply(header)
         return cls(url=url, header=header, auth=None)
