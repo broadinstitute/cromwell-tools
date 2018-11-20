@@ -4,7 +4,7 @@ import json
 import mock
 import pytest
 import requests
-from cromwell_tools.cromwell_auth import CromwellAuth, NoAuthenticationWarning
+from cromwell_tools.cromwell_auth import CromwellAuth
 
 
 def setup_auth_types():
@@ -73,7 +73,6 @@ def test_harmonize_credentials_from_service_account_key(mock_header):
 def test_harmonize_credentials_from_no_authentication():
     url = "https://fake_url"
     expected_auth = CromwellAuth(url=url, header=None, auth=None)
-    with pytest.warns(NoAuthenticationWarning):
-        auth = CromwellAuth.harmonize_credentials(url=url)
-        assert auth.auth == expected_auth.auth
-        assert auth.header == expected_auth.header
+    auth = CromwellAuth.harmonize_credentials(url=url)
+    assert auth.auth == expected_auth.auth
+    assert auth.header == expected_auth.header

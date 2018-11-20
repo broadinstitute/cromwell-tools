@@ -46,7 +46,7 @@ class CromwellAPI(object):
     _status_endpoint = '/api/workflows/v1/{uuid}/status'
     _submit_endpoint = '/api/workflows/v1'
     _metadata_endpoint = '/api/workflows/v1/{uuid}/metadata'
-    _health_endpoint = '/api/engine/v1/status'
+    _health_endpoint = '/engine/v1/status'
     _release_hold_endpoint = '/api/workflows/v1/{uuid}/releaseHold'
     _query_endpoint = '/api/workflows/v1/query'
 
