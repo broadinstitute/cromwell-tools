@@ -1,4 +1,5 @@
 import argparse
+import requests
 from cromwell_tools.cromwell_api import CromwellAPI
 from cromwell_tools.cromwell_auth import CromwellAuth
 
@@ -29,7 +30,7 @@ def parser(arguments=None):
         'validate', help='validate help', description='Validate a cromwell workflow using womtool.')
 
     # cromwell url and authentication arguments apply to all sub-commands
-    cromwell_sub_commands = [submit, wait, status, health]
+    cromwell_sub_commands = (submit, wait, status, abort, release_hold, query, health)
     auth_args = {
         'url': 'The URL to the Cromwell server. e.g. "https://cromwell.server.org/"',
         'username':  'Cromwell username for HTTPBasicAuth.',
@@ -42,11 +43,12 @@ def parser(arguments=None):
         for arg_dest, help_text in auth_args.items():
             subcommand_parser.add_argument('--{arg}'.format(arg=arg_dest.replace('_', '-')),
                                            dest=arg_dest, default=None, type=str, help=help_text)
-    # todo this should be a group which is called authentication
+    # TODO: this should be a group which is called authentication
     for p in cromwell_sub_commands:
         add_auth_args(p)
 
     # submit arguments
+    # TODO: add short flags for arguments
     submit.add_argument('--wdl-file', dest='wdl_file', type=argparse.FileType('r'), required=True,
                         help='The workflow source file to submit for execution.')
     submit.add_argument('--inputs-file', dest='inputs_file', type=argparse.FileType('r'), required=True,
@@ -68,10 +70,10 @@ def parser(arguments=None):
                         help='Whether to submit the workflow in "On Hold" status.')
 
     # wait arguments
-    wait.add_argument('workflow-ids', nargs='+')
-    wait.add_argument('--timeout-minutes', type=int, default=120,
+    wait.add_argument('workflow_ids', nargs='+')
+    wait.add_argument('--timeout-minutes', dest='timeout_minutes', type=int, default=120,
                       help='number of minutes to wait before timeout')
-    wait.add_argument('--poll-interval-seconds', type=int, default=30,
+    wait.add_argument('--poll-interval-seconds', dest='poll_interval_seconds', type=int, default=30,
                       help='seconds between polling cromwell for workflow status')
 
     # status arguments
@@ -87,16 +89,19 @@ def parser(arguments=None):
     # TODO: implement CLI entry for query API.
 
     # validate arguments
-    validate.add_argument('--wdl-file', type=str, required=True)
-    validate.add_argument('--womtool-path', type=str, required=True, help='path to cromwell womtool jar')
-    validate.add_argument('--dependencies-json', type=str, default=None)
+    validate.add_argument('--wdl-file', dest='wdl', type=str, required=True)
+    validate.add_argument('--womtool-path', dest='womtool_path', type=str, required=True,
+                          help='path to cromwell womtool jar')
+    validate.add_argument('--dependencies-json', dest='dependencies_json', type=str, default=None)
 
     args = vars(main_parser.parse_args(arguments))
     # TODO: see if this can be moved or if the commands can be populated from above
     if args['command'] in ('submit', 'wait', 'status', 'abort', 'release_hold', 'health', 'validate'):
-        auth_arg_dict = {k: args.get(k) for k in auth_args.keys()}
-        auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)
-        args['auth'] = auth
+        if args['command'] == 'validate': args['command'] = 'validate_workflow'
+        else:
+            auth_arg_dict = {k: args.get(k) for k in auth_args.keys()}
+            auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)
+            args['auth'] = auth
         for k in auth_args:
             if k in args:
                 del args[k]
@@ -106,6 +111,11 @@ def parser(arguments=None):
 
 
 # this should just getattr from CromwellAPI and call the func with args.
+# TODO: refactor this module into class-based parsers
 def main(arguments=None):
     command, args = parser(arguments)
-    print(command(**args))
+    API_result = command(**args)
+    if isinstance(API_result, requests.Response):
+        print(API_result.text)
+    else:
+        print(API_result)
