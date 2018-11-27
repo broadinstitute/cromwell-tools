@@ -1,23 +1,22 @@
 ---
 ### Purpose
-[comment]: <> (Please link to the issue being fixed by this PR)
-Link to the Issue:
+Please link to the issue being fixed by this PR:
 
 - No issue is linked to this PR.
 ---
 ### Changes
-[comment]: <> (Please list out what major changes were made to address this?)
+Please list out what major changes were made to address this:
 
 - No changes.
 ---
 ### Review Instructions
-[comment]: <> (Please provide instructions about how should a reviewer test/verify the changes in this PR?)
+Please provide instructions about how should a reviewer test/verify the changes in this PR:
 
 - No instructions.
 
 ---
 ### PR Checklist
-[comment]: <> (Please ensure the following when opening a PR)
+Please ensure the following when opening a PR:
 
 - [ ] This PR added or updated tests.
 - [ ] This PR updated docstrings or documentation.
@@ -26,7 +25,7 @@ Link to the Issue:
 
 ---
 ### Follow-up Discussions
-[comment]: <> (Please append follow-up discussions during the review process below)
+Please append follow-up discussions during the review process below:
 
 - No follow-up discussions.
 
