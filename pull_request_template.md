@@ -4,7 +4,7 @@ _Please link to the issue being fixed by this PR:_
 - No issue is linked to this PR.
 ---
 ### Changes
-_Please list out what major changes were made to address this:_
+_Please list out what major changes were made in this PR to address the issue:_
 
 - No changes.
 ---
