@@ -27,4 +27,3 @@ _Please ensure the following when opening a PR:_
 _Please append follow-up discussions and issues during the review process below:_
 
 - No follow-up discussions.
-
