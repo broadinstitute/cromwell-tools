@@ -1,5 +1,5 @@
 ### Purpose
-_Please link to the issue being fixed by this PR:_
+_Please explain the purpose of this PR and include links to any GitHub issues that it fixes:_
 
 - No issue is linked to this PR.
 ---
@@ -19,12 +19,12 @@ _Please ensure the following when opening a PR:_
 
 - [ ] This PR added or updated tests.
 - [ ] This PR updated docstrings or documentation.
-- [ ] This PR applied (WDL/Python) style guidelines.
+- [ ] This PR applied Python style guidelines, specifically followed [Google style docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google) for this repo.
 - [ ] This PR considered generalizability beyond our own use case.
 
 ---
 ### Follow-up Discussions
-_Please append follow-up discussions during the review process below:_
+_Please append follow-up discussions and issues during the review process below:_
 
 - No follow-up discussions.
 
