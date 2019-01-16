@@ -136,7 +136,7 @@ def read_local_file(path):
     Returns:
         contents (bytes or str): The loaded content. bytes in Python3 and str in Python2.
     """
-    with open(path, 'rb') as f:
+    with open(os.path.abspath(path), 'rb') as f:
         contents = f.read()
     return contents
 
