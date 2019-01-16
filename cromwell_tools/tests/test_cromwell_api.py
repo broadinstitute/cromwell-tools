@@ -141,14 +141,18 @@ class TestAPI(unittest.TestCase):
         query_dict = {'status': 'Running',
                       'start': '2018-01-01T00:00:00.000Z',
                       'end': '2018-01-01T12:00:00.000Z',
-                      'label': {'Comment': 'test'}
+                      'label': {'Comment': 'test'},
+                      'page': 1,
+                      'pageSize': 10
                       }
 
         expect_params = [
             {'status': 'Running'},
             {'start': '2018-01-01T00:00:00.000Z'},
             {'end': '2018-01-01T12:00:00.000Z'},
-            {'label': 'Comment:test'}
+            {'label': 'Comment:test'},
+            {'page': '1'},
+            {'pageSize': '10'}
         ]
 
         six.assertCountEqual(self, CromwellAPI._compose_query_params(query_dict), expect_params)
