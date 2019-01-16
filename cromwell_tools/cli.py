@@ -5,11 +5,12 @@ from cromwell_tools.cromwell_auth import CromwellAuth
 
 
 def parser(arguments=None):
-    # TODO: dynamically walk through the commands and automatcially create parsers here
+    # TODO: dynamically walk through the commands and automatcally create parsers here
 
     main_parser = argparse.ArgumentParser()
 
     subparsers = main_parser.add_subparsers(help='sub-command help', dest='command')
+
     # sub-commands of cromwell-tools
     submit = subparsers.add_parser(
             'submit', help='submit help', description='Submit a WDL workflow on Cromwell.')
@@ -42,59 +43,115 @@ def parser(arguments=None):
     def add_auth_args(subcommand_parser):
         for arg_dest, help_text in auth_args.items():
             subcommand_parser.add_argument('--{arg}'.format(arg=arg_dest.replace('_', '-')),
-                                           dest=arg_dest, default=None, type=str, help=help_text)
+                                           dest=arg_dest,
+                                           default=None,
+                                           type=str,
+                                           help=help_text)
     # TODO: this should be a group which is called authentication
     for p in cromwell_sub_commands:
         add_auth_args(p)
 
     # submit arguments
-    # TODO: add short flags for arguments
-    submit.add_argument('--wdl-file', dest='wdl_file', type=argparse.FileType('r'), required=True,
-                        help='The workflow source file to submit for execution.')
-    submit.add_argument('--inputs-file', dest='inputs_file', type=argparse.FileType('r'), required=True,
-                        help='File-like object containing input data in JSON format.')
-    submit.add_argument('--zip-file', dest='zip_file', type=argparse.FileType('r'),
-                        help='Zip file containing dependencies.')
-    submit.add_argument('--inputs-file2', dest='inputs_file2', type=argparse.FileType('r'),
-                        help='Inputs file 2.')
-    submit.add_argument('--options-file', dest='options_file', type=argparse.FileType('r'),
-                        help='Cromwell configs file.')
-
-    submit.add_argument('--collection-name', dest='collection_name', type=str, default=None,
+    submit.add_argument('-w',
+                        '--wdl-file',
+                        dest='wdl_file',
+                        type=str,
+                        required=True,
+                        help='Path to the workflow source file to submit for execution.')
+    submit.add_argument('-i',
+                        '--inputs_files',
+                        dest='inputs_files',
+                        nargs='+',
+                        type=str,
+                        required=True,
+                        help='Path(s) to the input file(s) containing input data in JSON format, separated by space.')
+    submit.add_argument('-d',
+                        '--deps-file',
+                        dest='dependencies',
+                        nargs='+',
+                        type=str,
+                        help='Path to the Zip file containing dependencies, or a list of raw dependency files to '
+                             'be zipped together separated by space.')
+    submit.add_argument('-o',
+                        '--options-file',
+                        dest='options_file',
+                        type=str,
+                        help='Path to the Cromwell configs JSON file.')
+    # TODO: add a mutually exclusive group to make it easy to add labels for users
+    submit.add_argument('-l',
+                        '--label-file',
+                        dest='label_file',
+                        type=str,
+                        default=None,
+                        help='Path to the JSON file containing a collection of key/value pairs for workflow labels.')
+    submit.add_argument('-c',
+                        '--collection-name',
+                        dest='collection_name',
+                        type=str,
+                        default=None,
                         help='Collection in SAM that the workflow should belong to, if use CaaS.')
-    submit.add_argument('--label', dest='label', type=argparse.FileType('r'), default=None,
-                        help='JSON file containing a collection of key/value pairs for workflow labels.')
-    submit.add_argument('--validate-labels', dest='validate_labels', type=bool, default=False,
-                        help='Whether to validate cromwell labels.')
-    submit.add_argument('--on-hold', dest='on_hold', type=bool, default=False,
+    submit.add_argument('--on-hold',
+                        dest='on_hold',
+                        type=bool,
+                        default=False,
                         help='Whether to submit the workflow in "On Hold" status.')
+    submit.add_argument('--validate-labels',
+                        dest='validate_labels',
+                        type=bool,
+                        default=False,
+                        help='Whether to validate cromwell labels.')
 
     # wait arguments
-    wait.add_argument('workflow_ids', nargs='+')
-    wait.add_argument('--timeout-minutes', dest='timeout_minutes', type=int, default=120,
+    wait.add_argument('workflow_ids',
+                      nargs='+')
+    wait.add_argument('--timeout-minutes',
+                      dest='timeout_minutes',
+                      type=int,
+                      default=120,
                       help='number of minutes to wait before timeout')
-    wait.add_argument('--poll-interval-seconds', dest='poll_interval_seconds', type=int, default=30,
+    wait.add_argument('--poll-interval-seconds',
+                      dest='poll_interval_seconds',
+                      type=int,
+                      default=30,
                       help='seconds between polling cromwell for workflow status')
 
     # status arguments
-    status.add_argument('--uuid', required=True, help='A Cromwell workflow UUID, which is the workflow identifier.')
+    status.add_argument('--uuid',
+                        required=True,
+                        help='A Cromwell workflow UUID, which is the workflow identifier.')
 
     # abort arguments
-    abort.add_argument('--uuid', required=True, help='A Cromwell workflow UUID, which is the workflow identifier.')
+    abort.add_argument('--uuid',
+                       required=True,
+                       help='A Cromwell workflow UUID, which is the workflow identifier.')
 
     # release_hold arguments
-    release_hold.add_argument('--uuid', required=True, help='A Cromwell workflow UUID, which is the workflow identifier.')
+    release_hold.add_argument('--uuid',
+                              required=True,
+                              help='A Cromwell workflow UUID, which is the workflow identifier.')
 
     # query arguments
     # TODO: implement CLI entry for query API.
 
     # validate arguments
-    validate.add_argument('--wdl-file', dest='wdl', type=str, required=True)
-    validate.add_argument('--womtool-path', dest='womtool_path', type=str, required=True,
+    validate.add_argument('-w',
+                          '--wdl-file',
+                          dest='wdl',
+                          type=str,
+                          required=True)
+    validate.add_argument('--womtool-path',
+                          dest='womtool_path',
+                          type=str,
+                          required=True,
                           help='path to cromwell womtool jar')
-    validate.add_argument('--dependencies-json', dest='dependencies_json', type=str, default=None)
+    validate.add_argument('--dependencies-json',
+                          dest='dependencies_json',
+                          type=str,
+                          default=None)
 
+    # group all of the arguments
     args = vars(main_parser.parse_args(arguments))
+
     # TODO: see if this can be moved or if the commands can be populated from above
     if args['command'] in ('submit', 'wait', 'status', 'abort', 'release_hold', 'health', 'validate'):
         if args['command'] == 'validate': args['command'] = 'validate_workflow'
