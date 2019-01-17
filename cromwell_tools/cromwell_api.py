@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 _failed_statuses = ('Failed', 'Aborted', 'Aborting')
 
-_cromwell_exclusive_query_keys = {'end', 'includeSubworkflows', 'start', 'submission'}
+_cromwell_exclusive_query_keys = {'end', 'includeSubworkflows', 'start', 'submission', 'page', 'pageSize'}
 
 _cromwell_inclusive_query_keys = {'additionalQueryResultFields', 'excludeLabelAnd', 'excludeLabelOr',
                                   'id', 'includeSubworkflows', 'label', 'labelor', 'name', 'status'}
