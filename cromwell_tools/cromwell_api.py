@@ -11,7 +11,6 @@ import requests
 import tempfile
 from datetime import datetime, timedelta
 from subprocess import PIPE, Popen
-from tenacity import retry, stop_after_delay, wait_exponential
 
 from cromwell_tools import utilities
 from cromwell_tools.utilities import _localize_file, validate_cromwell_label
@@ -128,11 +127,9 @@ class CromwellAPI(object):
         return response
 
     @classmethod
-    @retry(reraise=True, wait=wait_exponential(multiplier=1, max=10), stop=stop_after_delay(20))
     def submit(cls, auth, wdl_file, inputs_files=None, options_file=None, dependencies=None,
-               label_file=None, collection_name=None, on_hold=False, validate_labels=False):
-        # TODO: Add `raise_for_status` flag to this method and remove the hard-coded `raise_for_status()` call.
-        # TODO: Purifying the methods by taking the specific retry policy out from this method.
+               label_file=None, collection_name=None, on_hold=False, validate_labels=False,
+               raise_for_status=False):
         """ Submits a workflow to Cromwell.
 
         Args:
@@ -156,6 +153,8 @@ class CromwellAPI(object):
                 default None)
             on_hold: (Optional[bool]) Whether to submit the workflow in "On Hold" status. (default False)
             validate_labels (Optional[bool]) If True, validate cromwell labels. (default False)
+            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
+                False)
 
         Raises:
             requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
@@ -180,7 +179,8 @@ class CromwellAPI(object):
                                  auth=auth.auth,
                                  headers=auth.header)
 
-        response.raise_for_status()
+        if raise_for_status:
+            cls._check_and_raise_status(response)
         return response
 
     @classmethod
@@ -191,7 +191,7 @@ class CromwellAPI(object):
         one of the workflows fails or is aborted.
 
         Args:
-        workflow_ids (List): Workflow ids to wait for terminal status.
+        workflow_ids (List[str]): A list of workflow ids to wait for terminal status.
         timeout_minutes (int): Maximum number of minutes to wait. (default 120)
         auth (cromwell_tools._cromwell_auth.CromwellAuth): Authentication class holding headers
             or auth information to a Cromwell server.
