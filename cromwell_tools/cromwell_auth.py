@@ -13,7 +13,7 @@ class AuthenticationError(Exception):
 
 class CromwellAuth:
 
-    def __init__(self, url, header, auth):
+    def __init__(self, url, header, auth, oauth_credentials=None):
         """Authentication Helper Class for a Cromwell Server.
 
         Currently this class only supports 3 Auth methods with Cromwell:
@@ -26,13 +26,35 @@ class CromwellAuth:
             header (dict or None): Dictionary containing the (bearer token) authorization header.
             auth (requests.auth.HTTPBasicAuth or None): HTTP Basic Authentication information,
                 i.e. username and password.
+            oauth_credentials (service_account.Credentials or None): Optional, service_account.Credentials object,
+            used for refreshing the Authentication headers when using OAuth.
         """
 
         # TODO: add a step to validate the auth information with Cromwell Server, requires /auth endpoint from Cromwell
         self._validate_auth(header, auth)
-        self.header = header
-        self.auth = auth
+        self._header = header
+        self._auth = auth
+        self._credentials = oauth_credentials
         self.url = self._validate_url(url)
+
+    @property
+    def auth(self):
+        """The property of HTTP Basic Authentication information, i.e. username and password."""
+        return self._auth
+
+    @property
+    def header(self):
+        """Dictionary containing the (bearer token) authorization header.
+
+        If the credentials are provided to create the object, this property will make sure the token is not expired.
+        """
+        if self._credentials:
+            if not self._credentials.valid:
+                self._credentials.refresh(google.auth.transport.requests.Request())
+                header = {}
+                self._credentials.apply(header)
+                self._header = header
+        return self._header
 
     @staticmethod
     def _validate_auth(header, auth):
@@ -103,7 +125,7 @@ class CromwellAuth:
             credentials.refresh(google.auth.transport.requests.Request())
         header = {}
         credentials.apply(header)
-        return cls(url=url, header=header, auth=None)
+        return cls(url=url, header=header, auth=None, oauth_credentials=credentials)
 
     @classmethod
     def from_secrets_file(cls, secrets_file):
