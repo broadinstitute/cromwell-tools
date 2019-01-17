@@ -7,7 +7,6 @@ import requests_mock
 import six
 import tempfile
 import unittest
-from tenacity import stop_after_attempt, stop_after_delay
 
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
@@ -82,24 +81,17 @@ class TestAPI(unittest.TestCase):
             self.assertEqual(result.headers.get('test'), 'header')
 
     @requests_mock.mock()
-    def test_submit_workflow_retries_on_error(self, mock_request):
+    def test_submit_workflow_handlers_error_response(self, mock_request):
 
         def _request_callback(request, context):
             context.status_code = 500
             context.headers['test'] = 'header'
             return {'status': 'error', 'message': 'Internal Server Error'}
 
-        # Make the test complete faster by limiting the number of retries
-        CromwellAPI.submit.retry.stop = stop_after_attempt(2)
-
         # Check request actions
         for cromwell_auth in self.auth_options:
             with self.assertRaises(requests.HTTPError):
-                _ = self._submit_workflows(cromwell_auth, mock_request, _request_callback)
-                self.assertEqual(mock_request.call_count, 2)
-
-        # Reset default retry value
-        CromwellAPI.submit.retry.stop = stop_after_delay(20)
+                self._submit_workflows(cromwell_auth, mock_request, _request_callback).raise_for_status()
 
     @requests_mock.mock()
     def test_query_workflows_returns_200(self, mock_request):
