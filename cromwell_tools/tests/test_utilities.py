@@ -241,10 +241,15 @@ class TestUtilities(unittest.TestCase):
             utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
                                             dependencies="data/fake_test_deps.wdl")
     
-    def test_prepare_workflow_manifest_raises_an_error_for_dependencies_file_with_filepath_in_a_list_not_pointing_to_zip(self):
-        with self.assertRaises(ValueError):
-            utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
-                                            dependencies=["data/fake_test_deps.wdl"])
+    def test_prepare_workflow_manifest_works_for_dependencies_file_with_filepath_in_a_list(self):
+        manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                                   dependencies=[self.deps_zip_file_path])
+        expected_manifest = {
+            'workflowSource': self.wdl_file_BytesIO,
+            'workflowDependencies': self.deps_zip_file_BytesIO,
+            'workflowOnHold': 'false'
+        }
+        assert manifest['workflowDependencies'].getvalue() == expected_manifest['workflowDependencies'].getvalue()
 
     def test_prepare_workflow_manifest_works_for_dependencies_file_with_list_of_files(self):
         manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
