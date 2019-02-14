@@ -236,6 +236,11 @@ class TestUtilities(unittest.TestCase):
         }
         assert manifest['workflowDependencies'].getvalue() == expected_manifest['workflowDependencies'].getvalue()
 
+    def test_prepare_workflow_manifest_raises_an_error_for_dependencies_file_with_filepath_not_pointing_to_zip(self):
+        with self.assertRaises(ValueError):
+            utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
+                                            dependencies="data/fake_test_deps.wdl")
+        
     def test_prepare_workflow_manifest_works_for_dependencies_file_with_list_of_files(self):
         manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path,
                                                    dependencies=self.deps_files_paths_list)
