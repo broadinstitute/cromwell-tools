@@ -308,7 +308,7 @@ def prepare_workflow_manifest(wdl_file, inputs_files=None, options_file=None, de
                 zip_file = make_zip_in_memory(download_to_map(dependencies))
         elif isinstance(dependencies, str) and not dependencies.endswith('.zip'):
             # when a single file is provided as a string but not zipped
-            raise ValueError('The dependency file path must point to a ".zip" file!')
+            raise ValueError('The dependency file path must point to a ".zip" file! Or you may want to provide a list of WDL file(s).')
         else:
             # when a single zip file is provided as a string
             zip_file = _download_to_BytesIO_if_string(dependencies)
