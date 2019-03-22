@@ -70,6 +70,16 @@ def test_harmonize_credentials_from_service_account_key(mock_header):
     assert auth == expected_auth
 
 
+@mock.patch('cromwell_tools.cromwell_auth.CromwellAuth.from_service_account_key_file')
+def test_harmonize_credentials_from_service_account_key_content(mock_header):
+    service_account_key = {'client_email': 'fake_email', 'token_uri': 'fake_uri'}
+    url = 'https://cromwell.server.org'
+    expected_auth = CromwellAuth(url=url, header={"Authorization": "bearer fake_token"}, auth=None)
+    mock_header.return_value = expected_auth
+    auth = CromwellAuth.harmonize_credentials(url=url, service_account_key=service_account_key)
+    assert auth == expected_auth
+
+
 def test_harmonize_credentials_from_no_authentication():
     url = "https://fake_url"
     expected_auth = CromwellAuth(url=url, header=None, auth=None)
