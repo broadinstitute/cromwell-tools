@@ -109,7 +109,8 @@ class CromwellAuth:
         you are using OAuth for your Cromwell Server.
 
         Args:
-            service_account_key (str): Path to the JSON key file(service account key) for authenticating with CaaS.
+            service_account_key (str or dict): Path to the JSON key file(service account key), or a dict of
+                the JSON content of the key file, for authenticating with CaaS.
             url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
 
         Returns:
@@ -120,7 +121,11 @@ class CromwellAuth:
             'openid',
             'profile'
         ]
-        credentials = service_account.Credentials.from_service_account_file(service_account_key, scopes=scopes)
+        if isinstance(service_account_key, dict):
+            credentials = service_account.Credentials.from_service_account_info(service_account_key, scopes=scopes)
+        else:
+            credentials = service_account.Credentials.from_service_account_file(service_account_key, scopes=scopes)
+
         if not credentials.valid:
             credentials.refresh(google.auth.transport.requests.Request())
         header = {}
