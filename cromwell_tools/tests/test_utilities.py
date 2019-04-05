@@ -153,18 +153,21 @@ class TestUtilities(unittest.TestCase):
     def test_validate_cromwell_label_on_valid_labels_bytes_object(self):
         self.assertIsNone(utils.validate_cromwell_label(json.dumps(self.valid_labels).encode('utf-8')))
 
-    def test_localize_file_https(self):
+    def test_localize_file(self):
         temporary_directory = tempfile.mkdtemp()
-        # grab this file from the master branch of the cromwell-tools repository
-        target = ('https://raw.githubusercontent.com/broadinstitute/cromwell-tools/'
-                  'v0.3.1/cromwell_tools/tests/test_cromwell_tools.py')
-        utils._localize_file(target, temporary_directory)
-        localized_file = os.path.join(temporary_directory, os.path.basename(target))
+        # test that we can localize both local and https files. Use this file as a convenient target
+        targets = ('https://raw.githubusercontent.com/broadinstitute/cromwell-tools/'
+                   'v0.5.0/cromwell_tools/tests/test_cromwell_tools.py', 
+                   __file__)
+        for target in targets:
+            utils._localize_file(target, temporary_directory)
+            localized_file = os.path.join(temporary_directory, os.path.basename(target))
 
-        # verify the file was downloaded and that it contains some content we expect
-        assert os.path.isfile(localized_file)
-        with open(localized_file, 'r') as f:
-            assert 'cromwell_tools' in f.read()
+            # verify the file was downloaded and that it contains some content we expect
+            assert os.path.isfile(localized_file)
+            with open(localized_file, 'r') as f:
+                assert 'cromwell_tools' in f.read()
+            os.remove(localized_file)
 
     def test_prepare_workflow_manifest_works_for_wdl_file_with_filepath(self):
         manifest = utils.prepare_workflow_manifest(wdl_file=self.wdl_file_path)

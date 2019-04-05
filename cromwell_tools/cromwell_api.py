@@ -418,32 +418,3 @@ class CromwellAPI(object):
         """
         if not response.ok:
             raise requests.exceptions.HTTPError('Error Code {0}: {1}'.format(response.status_code, response.text))
-
-    @classmethod
-    def validate_workflow(cls, wdl, womtool_path, dependencies_json=None):
-        """Validate a wdl workflow using cromwell womtool.
-
-        Args:
-            wdl (str): Link or file path to wdl file.
-            womtool_path (str): Path to the womtool.jar. For more details about what is a womtools,
-                see https://github.com/broadinstitute/cromwell/releases)
-            dependencies_json (str): File path to json file containing workflow dependencies.
-        """
-        temporary_directory = tempfile.mkdtemp()
-
-        _localize_file(wdl, temporary_directory)
-        wdl_basename = os.path.basename(wdl)
-
-        if dependencies_json is not None:
-            with open(dependencies_json, 'r') as f:
-                depenencies_map = json.load(f)
-            for url in depenencies_map.values():
-                _localize_file(url, temporary_directory)
-
-        os.chdir(temporary_directory)
-        p = Popen(['java', '-jar', os.path.expanduser(womtool_path), 'validate', wdl_basename],
-                  stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        if err:
-            raise ChildProcessError(err)
-        print('stdout:\n%s' % out.decode())

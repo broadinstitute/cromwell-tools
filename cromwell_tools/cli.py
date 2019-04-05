@@ -27,8 +27,6 @@ def parser(arguments=None):
     health = subparsers.add_parser(
             'health', help='health help',
             description='Check that cromwell is running and that provided authentication is valid.')
-    validate = subparsers.add_parser(
-        'validate', help='validate help', description='Validate a cromwell workflow using womtool.')
 
     # cromwell url and authentication arguments apply to all sub-commands
     cromwell_sub_commands = (submit, wait, status, abort, release_hold, query, health)
@@ -133,32 +131,14 @@ def parser(arguments=None):
     # query arguments
     # TODO: implement CLI entry for query API.
 
-    # validate arguments
-    validate.add_argument('-w',
-                          '--wdl-file',
-                          dest='wdl',
-                          type=str,
-                          required=True)
-    validate.add_argument('--womtool-path',
-                          dest='womtool_path',
-                          type=str,
-                          required=True,
-                          help='path to cromwell womtool jar')
-    validate.add_argument('--dependencies-json',
-                          dest='dependencies_json',
-                          type=str,
-                          default=None)
-
     # group all of the arguments
     args = vars(main_parser.parse_args(arguments))
 
     # TODO: see if this can be moved or if the commands can be populated from above
-    if args['command'] in ('submit', 'wait', 'status', 'abort', 'release_hold', 'health', 'validate'):
-        if args['command'] == 'validate': args['command'] = 'validate_workflow'
-        else:
-            auth_arg_dict = {k: args.get(k) for k in auth_args.keys()}
-            auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)
-            args['auth'] = auth
+    if args['command'] in ('submit', 'wait', 'status', 'abort', 'release_hold', 'health'):
+        auth_arg_dict = {k: args.get(k) for k in auth_args.keys()}
+        auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)
+        args['auth'] = auth
         for k in auth_args:
             if k in args:
                 del args[k]

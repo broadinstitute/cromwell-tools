@@ -307,42 +307,5 @@ class TestAPI(unittest.TestCase):
             self.assertEqual(result.json()['status'], 'Succeeded')
 
 
-class TestValidate(unittest.TestCase):
-
-    def test_localize_file(self):
-        temporary_directory = tempfile.mkdtemp()
-
-        # test that we can localize both local and https files. Use this file as a convenient target
-        targets = [
-            'https://raw.githubusercontent.com/broadinstitute/cromwell-tools/v0.5.0/'
-            'cromwell_tools/tests/test_cromwell_tools.py',
-            __file__
-        ]
-        for target in targets:
-            utils._localize_file(target, temporary_directory)
-            localized_file = os.path.join(temporary_directory, os.path.basename(target))
-
-            # verify the file was localized and that it contains some expected content
-            assert os.path.isfile(localized_file)
-            with open(localized_file, 'r') as f:
-                assert 'cromwell_tools' in f.read()
-            os.remove(localized_file)
-
-    @unittest.skipIf(not os.environ.get('WOMTOOL'), 'Environment Variable WOMTOOL not found, cannot locate womtool.jar')
-    def test_validate_wdl(self):
-        # change dir so we can leverage relative paths to data
-        cwd = os.getcwd()
-        test_directory = os.path.dirname(__file__)
-        os.chdir(test_directory)
-
-        womtool = os.environ['WOMTOOL']
-        wdl = 'data/test_workflow.wdl'
-        dependencies_json = 'data/test_dependencies.json'
-        CromwellAPI.validate_workflow(wdl, womtool, dependencies_json)
-
-        # put the directory back how we found it
-        os.chdir(cwd)
-
-
 if __name__ == '__main__':
     unittest.main()
