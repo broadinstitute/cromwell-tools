@@ -5,6 +5,7 @@ is either installed from PyPI or installed via git directly.
 """
 
 from pkg_resources import get_distribution, DistributionNotFound
+
 try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
@@ -16,4 +17,4 @@ except DistributionNotFound:
 # cromwell_tools.api.metadata
 # cromwell_tools.api.run
 # ...
-from cromwell_tools.cromwell_api import CromwellAPI as api
+from cromwell_tools.cromwell_api import CromwellAPI as api  # noqa
