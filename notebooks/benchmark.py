@@ -5,7 +5,14 @@ from google.oauth2 import service_account
 
 
 # ask about optional arguments
-def get_benchmark(output_dir, parent_workflow_name, cromwell_id, google_bucket, project_id, credentials=None):
+def get_benchmark(
+    output_dir,
+    parent_workflow_name,
+    cromwell_id,
+    google_bucket,
+    project_id,
+    credentials=None,
+):
     """
     Saves a monitoring log for the tasks being called by your pipeline as a combined file (JSON)
 
@@ -17,15 +24,21 @@ def get_benchmark(output_dir, parent_workflow_name, cromwell_id, google_bucket, 
     :param credentials: your credentials for google as a JSON file (optional
     """
 
-    calls = get_calls(google_bucket, project_id, parent_workflow_name, cromwell_id, credentials)
+    calls = get_calls(
+        google_bucket, project_id, parent_workflow_name, cromwell_id, credentials
+    )
 
     call_logs = get_call_logs(calls)
 
-    file_name = get_path(parent_workflow_name + "_" + cromwell_id + "_benchmark_logs.json", output_dir)
+    file_name = get_path(
+        parent_workflow_name + "_" + cromwell_id + "_benchmark_logs.json", output_dir
+    )
     store_benchmark(call_logs, file_name)
 
 
-def get_calls(google_bucket, project_id, parent_workflow_name, cromwell_id, credentials=None):
+def get_calls(
+    google_bucket, project_id, parent_workflow_name, cromwell_id, credentials=None
+):
     """
     :param google_bucket: the name of google bucket where your workflow was run
     :param project_id: The google project id for the workflow

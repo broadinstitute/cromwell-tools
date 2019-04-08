@@ -12,7 +12,6 @@ class AuthenticationError(Exception):
 
 
 class CromwellAuth:
-
     def __init__(self, url, header, auth, oauth_credentials=None):
         """Authentication Helper Class for a Cromwell Server.
 
@@ -71,17 +70,23 @@ class CromwellAuth:
             ValueError: when the header is not a valid header(with Bearer token).
         """
         if not header and not auth:
-            logging.warning('You are not using any authentication with Cromwell. For security purposes, '
-                            'please consider adding authentication in front of your Cromwell instance!')
+            logging.warning(
+                'You are not using any authentication with Cromwell. For security purposes, '
+                'please consider adding authentication in front of your Cromwell instance!'
+            )
 
         if header:
             if not isinstance(header, dict):
                 raise TypeError('If passed, header must be a dict.')
             if "authorization" not in [k.lower() for k in header.keys()]:
-                raise ValueError('The header must have an "Authorization" or "authorization" key!')
+                raise ValueError(
+                    'The header must have an "Authorization" or "authorization" key!'
+                )
 
         if auth and not isinstance(auth, requests.auth.HTTPBasicAuth):
-            raise TypeError('The auth object must be a valid "requests.auth.HTTPBasicAuth" object!')
+            raise TypeError(
+                'The auth object must be a valid "requests.auth.HTTPBasicAuth" object!'
+            )
 
     @staticmethod
     def _validate_url(url):
@@ -116,15 +121,15 @@ class CromwellAuth:
         Returns:
             CromwellAuth: An instance of this auth helper class with valid OAuth Auth header.
         """
-        scopes = [
-            'email',
-            'openid',
-            'profile'
-        ]
+        scopes = ['email', 'openid', 'profile']
         if isinstance(service_account_key, dict):
-            credentials = service_account.Credentials.from_service_account_info(service_account_key, scopes=scopes)
+            credentials = service_account.Credentials.from_service_account_info(
+                service_account_key, scopes=scopes
+            )
         else:
-            credentials = service_account.Credentials.from_service_account_file(service_account_key, scopes=scopes)
+            credentials = service_account.Credentials.from_service_account_file(
+                service_account_key, scopes=scopes
+            )
 
         if not credentials.valid:
             credentials.refresh(google.auth.transport.requests.Request())
@@ -149,10 +154,7 @@ class CromwellAuth:
         """
         with open(secrets_file, 'r') as f:
             secrets = json.load(f)
-        auth = requests.auth.HTTPBasicAuth(
-                secrets['username'],
-                secrets['password']
-        )
+        auth = requests.auth.HTTPBasicAuth(secrets['username'], secrets['password'])
         url = secrets['url']
         return cls(url=url, header=None, auth=auth)
 
@@ -185,7 +187,13 @@ class CromwellAuth:
 
     @classmethod
     def harmonize_credentials(
-            cls, username=None, password=None, url=None, secrets_file=None, service_account_key=None):
+        cls,
+        username=None,
+        password=None,
+        url=None,
+        secrets_file=None,
+        service_account_key=None,
+    ):
         """Parse and harmonize user inputted credentials and generate proper authentication object for cromwell-tools.
 
         Args:
@@ -210,12 +218,18 @@ class CromwellAuth:
             "service_account_key": all((service_account_key, url)),
             "secrets_file": True if secrets_file else False,
             "user_password": all((username, password, url)),
-            "no_auth": True if (not any((service_account_key, secrets_file, username, password)) and url) else False
+            "no_auth": True
+            if (
+                not any((service_account_key, secrets_file, username, password)) and url
+            )
+            else False,
         }
         if sum(credentials.values()) != 1:
             raise ValueError(
-                    "Exactly one set of credentials must be passed.\nCredentials: {}".format(
-                            repr(credentials)))
+                "Exactly one set of credentials must be passed.\nCredentials: {}".format(
+                    repr(credentials)
+                )
+            )
 
         if credentials["service_account_key"]:
             return cls.from_service_account_key_file(service_account_key, url)

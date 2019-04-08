@@ -1,12 +1,12 @@
-from dateutil import parser
 import json
 import re
 import os
 import pandas as pd
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+
+matplotlib.use('TkAgg')
 
 
 def plot_benchmark(monitoring_log, parent_workflow_name, cromwell_id, output_dir):
@@ -60,10 +60,10 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
             # if no other shards of the task have been stored in dict
             if task_name not in tasks:
                 # store total memory and max memory of current task call
-                total_memory =  str(call["summary"]["memory"]["size"]) + str(call["summary"]["memory"]["unit"])
-                tasks[task_name] = {
-                    "max_memory": 0.0,
-                    "total_memory": total_memory}
+                total_memory = str(call["summary"]["memory"]["size"]) + str(
+                    call["summary"]["memory"]["unit"]
+                )
+                tasks[task_name] = {"max_memory": 0.0, "total_memory": total_memory}
 
             # get max memory usage of current task call
             max_memory = 0.0
@@ -77,8 +77,9 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
             if max_memory > tasks[task_name]["max_memory"]:
                 # save total memory and max memory of current task call
                 tasks[task_name]["max_memory"] = max_memory
-                tasks[task_name]["total_memory"] = str(call["summary"]["memory"]["size"]) \
-                    + str(call["summary"]["memory"]["unit"])
+                tasks[task_name]["total_memory"] = str(
+                    call["summary"]["memory"]["size"]
+                ) + str(call["summary"]["memory"]["unit"])
 
     task_calls = []
     total_memories = []
@@ -90,9 +91,13 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
         total_memories.append(mem_info["total_memory"])
 
     # create data frame / format for plotting
-    data_frame = pd.DataFrame({"task calls": task_calls,
-                               "total memories": total_memories,
-                               "max memory usages": max_memory_usages})
+    data_frame = pd.DataFrame(
+        {
+            "task calls": task_calls,
+            "total memories": total_memories,
+            "max memory usages": max_memory_usages,
+        }
+    )
 
     if len(task_calls) > 0:
         data_frame = data_frame.sort_values("task calls")
@@ -122,7 +127,9 @@ def plot_memory_usage(calls_dict, parent_workflow_name, cromwell_id, output_dir)
     ax2.tick_params(axis="both", labelsize=4)
 
     # save plot
-    filename = get_path(parent_workflow_name + "_" + cromwell_id + "_memory_usage_plot.png", output_dir)
+    filename = get_path(
+        parent_workflow_name + "_" + cromwell_id + "_memory_usage_plot.png", output_dir
+    )
     plt.savefig(filename, dpi=1000, bbox_inches="tight")
 
 

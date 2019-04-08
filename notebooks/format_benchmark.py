@@ -50,9 +50,7 @@ def convert_benchmark(output_dir, monitoring_log):
                 info = get_info("(\d*\.\d+|\d+)(M|G|T)$", line)
 
                 if info is not None:
-                    total_mem = {
-                        "size": float(info[0]),
-                        "unit": str(info[1]) + "B"}
+                    total_mem = {"size": float(info[0]), "unit": str(info[1]) + "B"}
 
             elif 'Total Disk space: ' in line:
                 info = get_info("(\d*\.\d+|\d+)(M|G|T)$", line)
@@ -60,10 +58,13 @@ def convert_benchmark(output_dir, monitoring_log):
                 if info is not None:
                     total_disk_sapce = {
                         "size": float(info[0]),
-                        "unit": str(info[1]) + "B"}
+                        "unit": str(info[1]) + "B",
+                    }
 
             elif '[' in line:
-                time_stamp = str(parser.parse(line.replace("[", '').replace("]", '').strip()))
+                time_stamp = str(
+                    parser.parse(line.replace("[", '').replace("]", '').strip())
+                )
 
             elif "CPU usage: " in line:
                 info = get_info("(\d*\.\d+|\d+)(%)$", line)
@@ -84,7 +85,12 @@ def convert_benchmark(output_dir, monitoring_log):
                 if info is not None:
                     disk_usage = float(info[0])
 
-                log = {"time": time_stamp, "cpu_usage": cpu_usage, "memory_usage": mem_usage, "disk_usage": disk_usage}
+                log = {
+                    "time": time_stamp,
+                    "cpu_usage": cpu_usage,
+                    "memory_usage": mem_usage,
+                    "disk_usage": disk_usage,
+                }
                 logs.append(log)
 
                 disk_usage = None
@@ -97,7 +103,8 @@ def convert_benchmark(output_dir, monitoring_log):
         summary = {
             "cores": num_of_cores,
             "memory": total_mem,
-            "disk_space": total_disk_sapce}
+            "disk_space": total_disk_sapce,
+        }
 
         call_log["summary"] = summary
         call_log["logs"] = logs

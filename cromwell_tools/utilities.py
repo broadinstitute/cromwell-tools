@@ -40,7 +40,7 @@ def _emulate_python_fullmatch(regex, string, flags=0):
     return re.match("(?:" + regex + r")\Z", string, flags=flags)
 
 
-if not "fullmatch" in dir(re):  # For Python3.4+
+if "fullmatch" not in dir(re):  # For Python3.4+
     re.fullmatch = _emulate_python_fullmatch
 
 
@@ -150,7 +150,8 @@ def _localize_file(url, target_directory='.'):
     """
     if not os.path.isdir(target_directory):
         raise NotADirectoryError(
-            'target_directory must be a valid directory on the local filesystem')
+            'target_directory must be a valid directory on the local filesystem'
+        )
 
     basename = os.path.basename(url)
     target_file = os.path.join(target_directory, basename)
@@ -162,7 +163,10 @@ def _localize_file(url, target_directory='.'):
     else:
         if not os.path.isfile(url):
             raise FileNotFoundError(
-                'non-http files must point to a valid file on the local filesystem. Not found: {}'.format(url))
+                'non-http files must point to a valid file on the local filesystem. Not found: {}'.format(
+                    url
+                )
+            )
         else:
             shutil.copy(url, target_file)
 
@@ -180,7 +184,9 @@ def _content_checker(regex, content):
     matched = re.fullmatch(regex, content)
 
     if not matched:
-        return 'Invalid label: {0} did not match the regex {1}.\n'.format(content, regex)
+        return 'Invalid label: {0} did not match the regex {1}.\n'.format(
+            content, regex
+        )
     else:
         return ''
 
@@ -196,7 +202,9 @@ def _length_checker(length, content):
         str: A string of error message if validation fails, or an empty string if validation succeeds.
     """
     if len(content) > length:
-        return 'Invalid label: {0} has {1} characters. The maximum is {2}.\n'.format(content, len(content), length)
+        return 'Invalid label: {0} has {1} characters. The maximum is {2}.\n'.format(
+            content, len(content), length
+        )
     else:
         return ''
 
@@ -217,9 +225,12 @@ def validate_cromwell_label(label_object):
     Raises:
         ValueError: This validator will raise an exception if the label_object is invalid as a Cromwell label.
     """
-    warnings.warn("This function doesn't work for Cromwell v32 and later versions and has been deprecated, "
-                  "be aware of using this validator when using Cromwell v32(+). Check "
-                  "https://cromwell.readthedocs.io/en/stable/Labels/ for details.", PendingDeprecationWarning)
+    warnings.warn(
+        "This function doesn't work for Cromwell v32 and later versions and has been deprecated, "
+        "be aware of using this validator when using Cromwell v32(+). Check "
+        "https://cromwell.readthedocs.io/en/stable/Labels/ for details.",
+        PendingDeprecationWarning,
+    )
 
     err_msg = ''
 
@@ -240,8 +251,15 @@ def validate_cromwell_label(label_object):
         raise ValueError(err_msg)
 
 
-def prepare_workflow_manifest(wdl_file, inputs_files=None, options_file=None, dependencies=None, label_file=None,
-                              collection_name=None, on_hold=False):
+def prepare_workflow_manifest(
+    wdl_file,
+    inputs_files=None,
+    options_file=None,
+    dependencies=None,
+    label_file=None,
+    collection_name=None,
+    on_hold=False,
+):
     """Prepare the submission manifest for a workflow submission.
 
     Args:
@@ -285,13 +303,17 @@ def prepare_workflow_manifest(wdl_file, inputs_files=None, options_file=None, de
                 input_file_key = 'workflowInputs'
             else:
                 # Compose other WDL inputs (from 2 - many)
-                input_file_key = 'workflowInputs_{X}'.format(X=idx+1)
+                input_file_key = 'workflowInputs_{X}'.format(X=idx + 1)
 
-            workflow_manifest[input_file_key] = _download_to_BytesIO_if_string(inputs_file)
+            workflow_manifest[input_file_key] = _download_to_BytesIO_if_string(
+                inputs_file
+            )
 
     # Compose WDL options
     if options_file:
-        workflow_manifest['workflowOptions'] = _download_to_BytesIO_if_string(options_file)
+        workflow_manifest['workflowOptions'] = _download_to_BytesIO_if_string(
+            options_file
+        )
 
     # Compose WDL labels
     if label_file:
@@ -308,7 +330,9 @@ def prepare_workflow_manifest(wdl_file, inputs_files=None, options_file=None, de
                 zip_file = make_zip_in_memory(download_to_map(dependencies))
         elif isinstance(dependencies, str) and not dependencies.endswith('.zip'):
             # when a single file is provided as a string but not zipped
-            raise ValueError('The dependency file path must point to a ".zip" file! Or you may want to provide a list of WDL file(s).')
+            raise ValueError(
+                'The dependency file path must point to a ".zip" file! Or you may want to provide a list of WDL file(s).'
+            )
         else:
             # when a single zip file is provided as a string
             zip_file = _download_to_BytesIO_if_string(dependencies)

@@ -6,26 +6,41 @@ import time
 
 import json
 import logging
-import os
 import requests
-import tempfile
 from datetime import datetime, timedelta
-from subprocess import PIPE, Popen
 
 from cromwell_tools import utilities
-from cromwell_tools.utilities import _localize_file, validate_cromwell_label
+from cromwell_tools.utilities import validate_cromwell_label
 
 
 logger = logging.getLogger(__name__)
 
 _failed_statuses = ('Failed', 'Aborted', 'Aborting')
 
-_cromwell_exclusive_query_keys = {'end', 'includeSubworkflows', 'start', 'submission', 'page', 'pageSize'}
+_cromwell_exclusive_query_keys = {
+    'end',
+    'includeSubworkflows',
+    'start',
+    'submission',
+    'page',
+    'pageSize',
+}
 
-_cromwell_inclusive_query_keys = {'additionalQueryResultFields', 'excludeLabelAnd', 'excludeLabelOr',
-                                  'id', 'includeSubworkflows', 'label', 'labelor', 'name', 'status'}
+_cromwell_inclusive_query_keys = {
+    'additionalQueryResultFields',
+    'excludeLabelAnd',
+    'excludeLabelOr',
+    'id',
+    'includeSubworkflows',
+    'label',
+    'labelor',
+    'name',
+    'status',
+}
 
-_cromwell_query_keys = _cromwell_exclusive_query_keys.union(_cromwell_inclusive_query_keys)
+_cromwell_query_keys = _cromwell_exclusive_query_keys.union(
+    _cromwell_inclusive_query_keys
+)
 
 
 class WorkflowFailedException(Exception):
@@ -67,9 +82,11 @@ class CromwellAPI(object):
         Returns:
             requests.Response: HTTP response from Cromwell.
         """
-        response = requests.post(url=auth.url + cls._abort_endpoint.format(uuid=uuid),
-                                 auth=auth.auth,
-                                 headers=auth.header)
+        response = requests.post(
+            url=auth.url + cls._abort_endpoint.format(uuid=uuid),
+            auth=auth.auth,
+            headers=auth.header,
+        )
 
         if raise_for_status:
             cls._check_and_raise_status(response)
@@ -93,9 +110,11 @@ class CromwellAPI(object):
         Returns:
             requests.Response: HTTP response from Cromwell.
         """
-        response = requests.get(url=auth.url + cls._status_endpoint.format(uuid=uuid),
-                                auth=auth.auth,
-                                headers=auth.header)
+        response = requests.get(
+            url=auth.url + cls._status_endpoint.format(uuid=uuid),
+            auth=auth.auth,
+            headers=auth.header,
+        )
 
         if raise_for_status:
             cls._check_and_raise_status(response)
@@ -118,18 +137,28 @@ class CromwellAPI(object):
         Returns:
             requests.Response: HTTP response from Cromwell.
         """
-        response = requests.get(url=auth.url + cls._health_endpoint,
-                                auth=auth.auth,
-                                headers=auth.header)
+        response = requests.get(
+            url=auth.url + cls._health_endpoint, auth=auth.auth, headers=auth.header
+        )
 
         if raise_for_status:
             cls._check_and_raise_status(response)
         return response
 
     @classmethod
-    def submit(cls, auth, wdl_file, inputs_files=None, options_file=None, dependencies=None,
-               label_file=None, collection_name=None, on_hold=False, validate_labels=False,
-               raise_for_status=False):
+    def submit(
+        cls,
+        auth,
+        wdl_file,
+        inputs_files=None,
+        options_file=None,
+        dependencies=None,
+        label_file=None,
+        collection_name=None,
+        on_hold=False,
+        validate_labels=False,
+        raise_for_status=False,
+    ):
         """ Submits a workflow to Cromwell.
 
         Args:
@@ -163,28 +192,39 @@ class CromwellAPI(object):
         Returns:
             requests.Response: HTTP response from Cromwell.
         """
-        submission_manifest = utilities.prepare_workflow_manifest(wdl_file=wdl_file,
-                                                                  inputs_files=inputs_files,
-                                                                  options_file=options_file,
-                                                                  dependencies=dependencies,
-                                                                  label_file=label_file,
-                                                                  collection_name=collection_name,
-                                                                  on_hold=on_hold)
+        submission_manifest = utilities.prepare_workflow_manifest(
+            wdl_file=wdl_file,
+            inputs_files=inputs_files,
+            options_file=options_file,
+            dependencies=dependencies,
+            label_file=label_file,
+            collection_name=collection_name,
+            on_hold=on_hold,
+        )
 
         if validate_labels and label_file is not None:
             validate_cromwell_label(submission_manifest['labels'])
 
-        response = requests.post(auth.url + cls._submit_endpoint,
-                                 files=submission_manifest,
-                                 auth=auth.auth,
-                                 headers=auth.header)
+        response = requests.post(
+            auth.url + cls._submit_endpoint,
+            files=submission_manifest,
+            auth=auth.auth,
+            headers=auth.header,
+        )
 
         if raise_for_status:
             cls._check_and_raise_status(response)
         return response
 
     @classmethod
-    def wait(cls, workflow_ids, auth, timeout_minutes=120, poll_interval_seconds=30, verbose=True):
+    def wait(
+        cls,
+        workflow_ids,
+        auth,
+        timeout_minutes=120,
+        poll_interval_seconds=30,
+        verbose=True,
+    ):
         """Wait until cromwell returns successfully for each provided workflow
 
         Given a list of workflow ids, wait until cromwell returns successfully for each status, or
@@ -214,8 +254,9 @@ class CromwellAPI(object):
                 response = cls.status(uuid, auth)
                 status = cls._parse_workflow_status(response)
                 if status in _failed_statuses:
-                    raise WorkflowFailedException('Workflow {0} returned status {1}'.format(
-                            uuid, status))
+                    raise WorkflowFailedException(
+                        'Workflow {0} returned status {1}'.format(uuid, status)
+                    )
                 elif status != 'Succeeded':
                     all_succeeded = False
 
@@ -248,9 +289,11 @@ class CromwellAPI(object):
         Returns:
             response (requests.Response): HTTP response from Cromwell.
         """
-        response = requests.post(url=auth.url + cls._release_hold_endpoint.format(uuid=uuid),
-                                 auth=auth.auth,
-                                 headers=auth.header)
+        response = requests.post(
+            url=auth.url + cls._release_hold_endpoint.format(uuid=uuid),
+            auth=auth.auth,
+            headers=auth.header,
+        )
         if raise_for_status:
             cls._check_and_raise_status(response)
         return response
@@ -283,17 +326,24 @@ class CromwellAPI(object):
         Returns:
             response (requests.Response): HTTP response from Cromwell.
         """
-        if 'additionalQueryResultFields' in query_dict.keys() or 'includeSubworkflows' in query_dict.keys():
-            logging.warning('Note: additionalQueryResultFields, includeSubworkflows may not scale due to the '
-                            'following issues with Cromwell: https://github.com/broadinstitute/cromwell/issues/3115 '
-                            'and https://github.com/broadinstitute/cromwell/issues/3873')
+        if (
+            'additionalQueryResultFields' in query_dict.keys()
+            or 'includeSubworkflows' in query_dict.keys()
+        ):
+            logging.warning(
+                'Note: additionalQueryResultFields, includeSubworkflows may not scale due to the '
+                'following issues with Cromwell: https://github.com/broadinstitute/cromwell/issues/3115 '
+                'and https://github.com/broadinstitute/cromwell/issues/3873'
+            )
 
         query_params = cls._compose_query_params(query_dict)
 
-        response = requests.post(url=auth.url + cls._query_endpoint,
-                                 json=query_params,
-                                 auth=auth.auth,
-                                 headers=auth.header)
+        response = requests.post(
+            url=auth.url + cls._query_endpoint,
+            json=query_params,
+            auth=auth.auth,
+            headers=auth.header,
+        )
         if raise_for_status:
             cls._check_and_raise_status(response)
         return response
@@ -364,22 +414,36 @@ class CromwellAPI(object):
         query_params = []
         for k, v in query_dict.items():
             if k in _cromwell_query_keys:
-                if k is 'label' and isinstance(v, dict):
-                    query_params.extend([
-                        {'label': label_key + ':' + label_value} for label_key, label_value in v.items()
-                    ])
+                if k == 'label' and isinstance(v, dict):
+                    query_params.extend(
+                        [
+                            {'label': label_key + ':' + label_value}
+                            for label_key, label_value in v.items()
+                        ]
+                    )
                 elif isinstance(v, list):
                     if k in _cromwell_exclusive_query_keys:
-                        raise ValueError('{} cannot be specified multiple times!'.format(k))
-                    query_params.extend([
-                        {k: json.dumps(val)} if not isinstance(val, str) else {k: val} for val in set(v)
-                    ])
+                        raise ValueError(
+                            '{} cannot be specified multiple times!'.format(k)
+                        )
+                    query_params.extend(
+                        [
+                            {k: json.dumps(val)}
+                            if not isinstance(val, str)
+                            else {k: val}
+                            for val in set(v)
+                        ]
+                    )
                 else:
                     query_params.append(
-                            {k: json.dumps(v)} if not isinstance(v, str) else {k: v}
+                        {k: json.dumps(v)} if not isinstance(v, str) else {k: v}
                     )
             else:
-                logger.info('{} is not an allowed query key in Cromwell, will be ignored in this query.'.format(k))
+                logger.info(
+                    '{} is not an allowed query key in Cromwell, will be ignored in this query.'.format(
+                        k
+                    )
+                )
         return query_params
 
     @staticmethod
@@ -397,8 +461,10 @@ class CromwellAPI(object):
         """
         if response.status_code != 200:
             raise WorkflowUnknownException(
-                    'Status could not be determined, endpoint returned {0}'.format(
-                            response.status_code))
+                'Status could not be determined, endpoint returned {0}'.format(
+                    response.status_code
+                )
+            )
         else:
             return response.json()['status']
 
@@ -417,4 +483,6 @@ class CromwellAPI(object):
                 400 <= response.status_code < 600.
         """
         if not response.ok:
-            raise requests.exceptions.HTTPError('Error Code {0}: {1}'.format(response.status_code, response.text))
+            raise requests.exceptions.HTTPError(
+                'Error Code {0}: {1}'.format(response.status_code, response.text)
+            )

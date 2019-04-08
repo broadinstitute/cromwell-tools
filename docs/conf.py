@@ -45,7 +45,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -88,9 +88,7 @@ html_theme = 'sphinx_rtd_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {
-    'navigation_depth': 4,
-}
+html_theme_options = {'navigation_depth': 4}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -120,15 +118,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -138,8 +133,13 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Cromwell-tools.tex', 'Cromwell-tools Documentation',
-     'Mint Team', 'manual'),
+    (
+        master_doc,
+        'Cromwell-tools.tex',
+        'Cromwell-tools Documentation',
+        'Mint Team',
+        'manual',
+    )
 ]
 
 
@@ -148,8 +148,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'cromwell-tools', 'Cromwell-tools Documentation',
-     [author], 1)
+    (master_doc, 'cromwell-tools', 'Cromwell-tools Documentation', [author], 1)
 ]
 
 
@@ -159,9 +158,15 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Cromwell-tools', 'Cromwell-tools Documentation',
-     author, 'Cromwell-tools', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        'Cromwell-tools',
+        'Cromwell-tools Documentation',
+        author,
+        'Cromwell-tools',
+        'One line description of project.',
+        'Miscellaneous',
+    )
 ]
 
 
