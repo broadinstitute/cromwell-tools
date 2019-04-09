@@ -6,6 +6,7 @@ from google.oauth2 import service_account
 import google.auth.transport.requests
 import logging
 
+logger = logging.getLogger(__name__)
 
 class AuthenticationError(Exception):
     pass
@@ -70,7 +71,7 @@ class CromwellAuth:
             ValueError: when the header is not a valid header(with Bearer token).
         """
         if not header and not auth:
-            logging.warning(
+            logger.warning(
                 'You are not using any authentication with Cromwell. For security purposes, '
                 'please consider adding authentication in front of your Cromwell instance!'
             )
