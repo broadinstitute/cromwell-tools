@@ -10,8 +10,10 @@ import zipfile
 
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
+from six.moves import mock  # noqa
 
 from cromwell_tools import utilities as utils  # noqa
+from cromwell_tools.cromwell_auth import CromwellAuth  # noqa
 
 
 class TestUtilities(unittest.TestCase):
@@ -428,4 +430,36 @@ class TestUtilities(unittest.TestCase):
         assert (
             manifest['workflowOptions'].getvalue()
             == expected_manifest['workflowOptions'].getvalue()
+        )
+
+    def test_compose_oauth_options_for_jes_backend_cromwell_add_required_fields_to_workflow_options(
+        self
+    ):
+        test_url = 'https://fake_url'
+        test_service_account_key = 'data/fake_account_key.json'
+        with open(test_service_account_key, 'r') as f:
+            test_service_account_key_content = json.load(f)
+
+        test_auth = CromwellAuth(
+            url=test_url,
+            header={"Authorization": "bearer fake_token"},
+            auth=None,
+            service_key_content=test_service_account_key_content,
+        )
+
+        result_options = utils.compose_oauth_options_for_jes_backend_cromwell(
+            test_auth, self.options_file_BytesIO
+        )
+        result_options_in_dict = json.loads(result_options.getvalue())
+
+        assert (
+            result_options_in_dict['google_project']
+            == test_service_account_key_content['project_id']
+        )
+        assert (
+            result_options_in_dict['google_compute_service_account']
+            == test_service_account_key_content['client_email']
+        )
+        assert result_options_in_dict['user_service_account_json'] == json.dumps(
+            test_service_account_key_content
         )
