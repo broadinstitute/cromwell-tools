@@ -367,3 +367,41 @@ def _download_to_BytesIO_if_string(file):
         return file
     else:
         raise TypeError('Please make sure to pass in Union[str, io.BytesIO] types!')
+
+
+def compose_oauth_options_for_jes_backend_cromwell(
+    auth, cromwell_options_file, execution_bucket=None
+):
+    """Append special options that are required by JES(Google Job Execution Service) backend Cromwell.
+
+    THis helper function will append special options that are required by JES(Google Job Execution Service)
+    backend Cromwell/Cromwell-as-a-Service to the default workflow options. Note: These options only work
+    with Cromwell instances that use the Google Cloud Backend and allow user-service-account authentication.
+
+    Args:
+        auth (cromwell_tools.cromwell_auth.CromwellAuth): authentication class holding auth information to a
+            Cromwell server.
+        cromwell_options_file (io.BytsIO): Contents of the options for a workflow in BytesIO format.
+        execution_bucket (str or None): Optional, the Google CLoud Bucket that Cromwell will use to output
+            execution results and store temporary scripts. If not specified, it will use
+            'gs://{google_project}-cromwell-execution/caas-cromwell-executions' by default.
+
+    Returns:
+        options_stream (io.BytsIO): BytesIO object of the updated workflow options with the required auth fields.
+    """
+
+    # using `getvalue()` here so we don't have to seek back to the beginning if we need the value again
+    options_json = json.loads(cromwell_options_file.getvalue())
+    google_project = auth.service_key_content['project_id']
+
+    options_json.update(
+        {
+            'jes_gcs_root': execution_bucket
+            or f'gs://{google_project}-cromwell-execution/caas-cromwell-executions',
+            'google_project': google_project,
+            'user_service_account_json': json.dumps(auth.service_key_content),
+            'google_compute_service_account': auth.service_key_content['client_email'],
+        }
+    )
+    options_stream = io.BytesIO(json.dumps(options_json).encode())
+    return options_stream
