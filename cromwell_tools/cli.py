@@ -81,7 +81,7 @@ def parser(arguments=None):
     )
     submit.add_argument(
         '-i',
-        '--inputs_files',
+        '--inputs-files',
         dest='inputs_files',
         nargs='+',
         type=str,
@@ -143,14 +143,20 @@ def parser(arguments=None):
         dest='timeout_minutes',
         type=int,
         default=120,
-        help='number of minutes to wait before timeout',
+        help='number of minutes to wait before timeout.',
     )
     wait.add_argument(
         '--poll-interval-seconds',
         dest='poll_interval_seconds',
         type=int,
         default=30,
-        help='seconds between polling cromwell for workflow status',
+        help='seconds between polling cromwell for workflow status.',
+    )
+    wait.add_argument(
+        '--verbose',
+        dest='verbose',
+        action='store_true',
+        help='whether to print verbose workflow information while polling cromwell.',
     )
 
     # status arguments
