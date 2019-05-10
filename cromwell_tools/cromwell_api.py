@@ -206,7 +206,7 @@ class CromwellAPI(object):
             submission_manifest[
                 'workflowOptions'
             ] = utilities.compose_oauth_options_for_jes_backend_cromwell(
-                auth, submission_manifest['workflowOptions']
+                auth, submission_manifest.get('workflowOptions')
             )
 
         if validate_labels and label_file is not None:

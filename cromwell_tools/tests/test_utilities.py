@@ -453,6 +453,40 @@ class TestUtilities(unittest.TestCase):
         result_options_in_dict = json.loads(result_options.getvalue())
 
         assert (
+            result_options_in_dict['read_from_cache']
+            == json.loads(self.options_file_BytesIO.getvalue())['read_from_cache']
+        )
+        assert (
+            result_options_in_dict['google_project']
+            == test_service_account_key_content['project_id']
+        )
+        assert (
+            result_options_in_dict['google_compute_service_account']
+            == test_service_account_key_content['client_email']
+        )
+        assert result_options_in_dict['user_service_account_json'] == json.dumps(
+            test_service_account_key_content
+        )
+
+    def test_if_compose_oauth_options_for_jes_backend_cromwell_can_deal_with_null_workflow_options(
+        self
+    ):
+        test_url = 'https://fake_url'
+        test_service_account_key = 'data/fake_account_key.json'
+        with open(test_service_account_key, 'r') as f:
+            test_service_account_key_content = json.load(f)
+
+        test_auth = CromwellAuth(
+            url=test_url,
+            header={"Authorization": "bearer fake_token"},
+            auth=None,
+            service_key_content=test_service_account_key_content,
+        )
+
+        result_options = utils.compose_oauth_options_for_jes_backend_cromwell(test_auth)
+        result_options_in_dict = json.loads(result_options.getvalue())
+
+        assert (
             result_options_in_dict['google_project']
             == test_service_account_key_content['project_id']
         )

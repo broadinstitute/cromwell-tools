@@ -370,7 +370,7 @@ def _download_to_BytesIO_if_string(file):
 
 
 def compose_oauth_options_for_jes_backend_cromwell(
-    auth, cromwell_options_file, execution_bucket=None
+    auth, cromwell_options_file=None, execution_bucket=None
 ):
     """Append special options that are required by JES(Google Job Execution Service) backend Cromwell.
 
@@ -381,7 +381,8 @@ def compose_oauth_options_for_jes_backend_cromwell(
     Args:
         auth (cromwell_tools.cromwell_auth.CromwellAuth): authentication class holding auth information to a
             Cromwell server.
-        cromwell_options_file (io.BytsIO): Contents of the options for a workflow in BytesIO format.
+        cromwell_options_file (io.BytsIO or None): Optional, contents of the options for a workflow in BytesIO format.
+            if not specified, this function will create an empty option stream and add the necessary keys to it.
         execution_bucket (str or None): Optional, the Google CLoud Bucket that Cromwell will use to output
             execution results and store temporary scripts. If not specified, it will use
             'gs://{google_project}-cromwell-execution/caas-cromwell-executions' by default.
@@ -389,6 +390,8 @@ def compose_oauth_options_for_jes_backend_cromwell(
     Returns:
         options_stream (io.BytsIO): BytesIO object of the updated workflow options with the required auth fields.
     """
+    if not cromwell_options_file:
+        cromwell_options_file = io.BytesIO(json.dumps({}).encode())
 
     # using `getvalue()` here so we don't have to seek back to the beginning if we need the value again
     options_json = json.loads(cromwell_options_file.getvalue())
