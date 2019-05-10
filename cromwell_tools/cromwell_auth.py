@@ -12,7 +12,9 @@ class AuthenticationError(Exception):
 
 
 class CromwellAuth:
-    def __init__(self, url, header, auth, oauth_credentials=None):
+    def __init__(
+        self, url, header, auth, oauth_credentials=None, service_key_content=None
+    ):
         """Authentication Helper Class for a Cromwell Server.
 
         Currently this class only supports 3 Auth methods with Cromwell:
@@ -27,6 +29,7 @@ class CromwellAuth:
                 i.e. username and password.
             oauth_credentials (service_account.Credentials or None): Optional, service_account.Credentials object,
             used for refreshing the Authentication headers when using OAuth.
+            service_key_content (dict): Optional, required by JES-backend Cromwells that use OAuth.
         """
 
         # TODO: add a step to validate the auth information with Cromwell Server, requires /auth endpoint from Cromwell
@@ -35,11 +38,17 @@ class CromwellAuth:
         self._auth = auth
         self._credentials = oauth_credentials
         self.url = self._validate_url(url)
+        self._service_key_content = service_key_content
 
     @property
     def auth(self):
         """The property of HTTP Basic Authentication information, i.e. username and password."""
         return self._auth
+
+    @property
+    def service_key_content(self):
+        """The content of the service account key, if applicable. This is required by JES-backend Cromwell using OAuth."""
+        return self._service_key_content
 
     @property
     def header(self):
@@ -126,16 +135,25 @@ class CromwellAuth:
             credentials = service_account.Credentials.from_service_account_info(
                 service_account_key, scopes=scopes
             )
+            service_key_content = service_account_key
         else:
             credentials = service_account.Credentials.from_service_account_file(
                 service_account_key, scopes=scopes
             )
+            with open(service_account_key, 'r') as f:
+                service_key_content = json.load(f)
 
         if not credentials.valid:
             credentials.refresh(google.auth.transport.requests.Request())
         header = {}
         credentials.apply(header)
-        return cls(url=url, header=header, auth=None, oauth_credentials=credentials)
+        return cls(
+            url=url,
+            header=header,
+            auth=None,
+            oauth_credentials=credentials,
+            service_key_content=service_key_content,
+        )
 
     @classmethod
     def from_secrets_file(cls, secrets_file):

@@ -1,10 +1,14 @@
 import os
 import tempfile
 import json
-import mock
+import six
 import pytest
 import requests
 from cromwell_tools.cromwell_auth import CromwellAuth
+
+
+six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
+from six.moves import mock  # noqa
 
 
 def setup_auth_types():
