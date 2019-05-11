@@ -153,10 +153,10 @@ def parser(arguments=None):
         help='seconds between polling cromwell for workflow status.',
     )
     wait.add_argument(
-        '--verbose',
+        '--silent',
         dest='verbose',
-        action='store_true',
-        help='whether to print verbose workflow information while polling cromwell.',
+        action='store_false',
+        help='whether to silently print verbose workflow information while polling cromwell.',
     )
 
     # status arguments

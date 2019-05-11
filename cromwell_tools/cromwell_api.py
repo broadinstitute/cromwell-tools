@@ -276,9 +276,8 @@ class CromwellAPI(object):
                     all_succeeded = False
 
             if all_succeeded:
-                if verbose:
-                    print('All workflows succeeded!')
-                return
+                print('All workflows succeeded!')
+                return ''
 
             time.sleep(poll_interval_seconds)
 
