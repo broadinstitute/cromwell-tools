@@ -206,7 +206,7 @@ class CromwellAPI(object):
             submission_manifest[
                 'workflowOptions'
             ] = utilities.compose_oauth_options_for_jes_backend_cromwell(
-                auth, submission_manifest['workflowOptions']
+                auth, submission_manifest.get('workflowOptions')
             )
 
         if validate_labels and label_file is not None:
@@ -253,24 +253,31 @@ class CromwellAPI(object):
         while True:
 
             if datetime.now() - start > timeout:
-                msg = 'Unfinished workflows after {0} minutes.'
+                msg = f'Unfinished workflows after {timeout} minutes.'
                 raise Exception(msg.format(timeout))
 
             all_succeeded = True
+
+            if verbose:
+                print('--- polling from cromwell ---')
+
             for uuid in workflow_ids:
                 response = cls.status(uuid, auth)
                 status = cls._parse_workflow_status(response)
+
+                if verbose:
+                    print(f'Workflow {uuid} returned status {status}')
+
                 if status in _failed_statuses:
                     raise WorkflowFailedException(
-                        'Workflow {0} returned status {1}'.format(uuid, status)
+                        f'Workflow {uuid} returned status {status}'
                     )
                 elif status != 'Succeeded':
                     all_succeeded = False
 
             if all_succeeded:
-                if verbose:
-                    print('All workflows succeeded!')
-                return
+                print('All workflows succeeded!')
+                return ''
 
             time.sleep(poll_interval_seconds)
 
