@@ -35,30 +35,42 @@ Overview
 This repo contains a cromwell_tools Python package, accessory scripts and IPython notebooks.
 
 The cromwell_tools Python package is designed to be a Python API and Command Line Tool for interacting with the `Cromwell <https://github.com/broadinstitute/cromwell>`_. with the following features:
+
     - Python3 compatible. (Starting from release v2.0.0, cromwell-tools will no longer support Python 2.7)
+
     - Consistency in authentication to work with Cromwell.
+
     - Consistency between API and CLI interfaces.
+
     - Sufficient test cases.
-    - User-friendly documentation on `Read The Docs <https://cromwell-tools.readthedocs.io/en/latest/>`_.
+
+    - Documentation on `Read The Docs <https://cromwell-tools.readthedocs.io/en/latest/>`_.
 
 The accessory scripts and IPython notebooks are useful to:
+
     - Monitor the resource usages of workflows running in Cromwell.
+
     - Visualize the workflows benchmarking metrics.
 
 
 Installation
 ============
-From version ``v1.0.0``, you can install cromwell-tools from `PyPI <https://pypi.org/>`_:
+
+1. (optional and highly recommended) Create a Python 3 `virtual environment <https://virtualenv.pypa.io/en/latest/userguide/#usage>`_
+locally and activate it: e.g. ``virtualenv -p python3 myenv && source myenv/bin/activate``
+
+2. Install (or upgrade) Cromwell-tools from `PyPI <https://pypi.org/>`_:
 
 .. code:: bash
 
-    pip install cromwell-tools
+    pip install -U cromwell-tools
 
-To install the testing requirements as extras of the library, use:
+3. You can verify the installation by:
 
 .. code:: bash
 
-    pip install "cromwell-tools[test]"
+    cromwell-tools --version
+
 
 Usage
 =====
@@ -72,7 +84,7 @@ In Python, you can import the package with:
     import cromwell_tools.api as cwt
     cwt.submit(*args)
 
-assuming args is a list of arguments needed. For more details, please check the example `Jupyter Notebooks <https://github.com/broadinstitute/cromwell-tools/tree/master/notebooks/Quickstart>`_.
+assuming args is a list of arguments needed. For more details, please check the example `Quickstart Jupyter Notebook <https://github.com/broadinstitute/cromwell-tools/tree/master/notebooks/Tutorials/Quickstart/quickstart.ipynb>`_.
 
 Commandline Interface
 ---------------------
@@ -87,7 +99,7 @@ This package also installs a command line interface that mirrors the API and is 
                       ...
 
     positional arguments:
-      {submit,wait,status,abort,release_hold,query,health,validate}
+      {submit,wait,status,abort,release_hold,query,health}
                             sub-command help
         submit              submit help
         wait                wait help
@@ -99,10 +111,12 @@ This package also installs a command line interface that mirrors the API and is 
 
     optional arguments:
       -h, --help            show this help message and exit
+      -V, --version         show program's version number and exit
 
 
-A set of sub-commands to submit, query, abort, release on-hold workflows, wait for workflow completion, determining
-status of jobs and validate workflow files are exposed by this CLI.
+A set of sub-commands to submit, query, abort, release on-hold workflows, wait for workflow completion and determining
+status of jobs are exposed by this CLI.
+
 
 Testing
 =======
@@ -164,3 +178,30 @@ If you really want to manually trigger the linters and formatters on your code, 
 Dependencies
 ------------
 When upgrading the dependencies of cromwell-tools, please make sure ``requirements.txt``, ``requirements-test.txt`` and ``setup.py`` are consistent!
+
+Documentation
+-------------
+To edit the docmentation and rebuild it locally, make sure you have `Sphinx <http://www.sphinx-doc.org/en/master/>`_ installed and from within the root directory, run:
+
+.. code::
+
+    sphinx-build -b html docs/ docs/_build/
+
+and then you could preview the built documentation by opening ``docs/_build/index.html`` in your web browser.
+
+
+Publish on PyPI
+---------------
+To publish a new version of Cromwell-tools on PyPI:
+
+1. Make sure you have an empty ``dist`` folder locally.
+2. Make sure you have ``twine`` installed: ``pip install twine``.
+3. Build the package: ``python setup.py sdist bdist_wheel``
+4. Upload and publish on PyPI: ``twine upload dist/* --verbose``, note you will need the username and password
+    of the development account to finish this step.
+
+
+Contribute
+==========
+
+Coming soon... For now, feel free to submit issues and open a PR, we will try our best to address them.

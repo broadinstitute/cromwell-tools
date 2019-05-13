@@ -1,29 +1,24 @@
-.. include:: ../README.rst
+Cromwell-tools documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-API documentation
-=================
-.. automodule:: cromwell_tools.cromwell_api
-   :members:
-   :inherited-members:
 
-.. automodule:: cromwell_tools.cromwell_auth
-   :members:
-   :inherited-members:
-
-.. automodule:: cromwell_tools.utilities
-   :members:
-   :inherited-members:
-
-.. automodule:: cromwell_tools.cli
-   :members:
-   :inherited-members:
-
-Table of Contents
-=================
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
+   :caption: Overview
+
+   README_SYMLINK
 
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :maxdepth: 3
+   :caption: Tutorials
+
+   Tutorials/Quickstart/api_quickstart
+   Tutorials/Quickstart/cli_quickstart
+
+
+.. toctree::
+   :maxdepth: 3
+   :caption: API Documentation
+
+   API/index
