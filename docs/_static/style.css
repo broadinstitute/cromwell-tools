@@ -1,0 +1,6 @@
+/* This is for solving the problem that long lines on default readthedocs theme will overflow on the page.
+Refer to https://stackoverflow.com/a/33626140/7247312
+*/
+.wy-nav-content {
+    max-width: none;
+}

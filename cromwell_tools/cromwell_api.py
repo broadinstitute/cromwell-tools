@@ -238,14 +238,14 @@ class CromwellAPI(object):
         one of the workflows fails or is aborted.
 
         Args:
-        workflow_ids (List[str]): A list of workflow ids to wait for terminal status.
-        timeout_minutes (int): Maximum number of minutes to wait. (default 120)
-        auth (cromwell_tools._cromwell_auth.CromwellAuth): Authentication class holding headers
-            or auth information to a Cromwell server.
-        poll_interval_seconds (Optional[int]): Number of seconds between checks for workflow
-            completion. (default 30)
-        verbose (Optional[bool]): If True, report to stdout when all workflows succeed.
-            (default True)
+            workflow_ids (List[str]): A list of workflow ids to wait for terminal status.
+            timeout_minutes (int): Maximum number of minutes to wait. (default 120)
+            auth (cromwell_tools._cromwell_auth.CromwellAuth): Authentication class holding headers
+                or auth information to a Cromwell server.
+            poll_interval_seconds (Optional[int]): Number of seconds between checks for workflow
+                completion. (default 30)
+            verbose (Optional[bool]): If True, report to stdout when all workflows succeed.
+                (default True)
         """
         start = datetime.now()
         timeout = timedelta(minutes=int(timeout_minutes))
