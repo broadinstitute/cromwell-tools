@@ -181,7 +181,9 @@ When upgrading the dependencies of cromwell-tools, please make sure ``requiremen
 
 Documentation
 -------------
-To edit the docmentation and rebuild it locally, make sure you have `Sphinx <http://www.sphinx-doc.org/en/master/>`_ installed and from within the root directory, run:
+To edit the docmentation and rebuild it locally, make sure you have `Sphinx <http://www.sphinx-doc.org/en/master/>`_ installed. You might
+also want to install the dependencies for building the docs: ``pip install requirements-docs.txt``.
+Finally from within the root directory, run:
 
 .. code::
 
