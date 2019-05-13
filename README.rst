@@ -192,8 +192,7 @@ To publish a new version of Cromwell-tools on PyPI:
 1. Make sure you have an empty ``dist`` folder locally.
 2. Make sure you have ``twine`` installed: ``pip install twine``.
 3. Build the package: ``python setup.py sdist bdist_wheel``
-4. Upload and publish on PyPI: ``twine upload dist/* --verbose``, note you will need the username and password
-    of the development account to finish this step.
+4. Upload and publish on PyPI: ``twine upload dist/* --verbose``, note you will need the username and password of the development account to finish this step.
 
 
 Contribute
