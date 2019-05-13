@@ -35,21 +35,14 @@ Overview
 This repo contains a cromwell_tools Python package, accessory scripts and IPython notebooks.
 
 The cromwell_tools Python package is designed to be a Python API and Command Line Tool for interacting with the `Cromwell <https://github.com/broadinstitute/cromwell>`_. with the following features:
-
     - Python3 compatible. (Starting from release v2.0.0, cromwell-tools will no longer support Python 2.7)
-
     - Consistency in authentication to work with Cromwell.
-
     - Consistency between API and CLI interfaces.
-
     - Sufficient test cases.
-
     - Documentation on `Read The Docs <https://cromwell-tools.readthedocs.io/en/latest/>`_.
 
 The accessory scripts and IPython notebooks are useful to:
-
     - Monitor the resource usages of workflows running in Cromwell.
-
     - Visualize the workflows benchmarking metrics.
 
 
