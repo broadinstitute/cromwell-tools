@@ -1,0 +1,4 @@
+# Exclude the documentation Jupyter Notebooks from the linguist so 
+# the 'Jupyter Notebook' doesn't dominate the repo language
+
+docs/Tutorials/* linguist-generated=true
