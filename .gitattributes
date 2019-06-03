@@ -1,0 +1,4 @@
+# Exclude the documentation files from the linguist so 
+# the 'Jupyter Notebook' doesn't dominate the repo language
+
+docs/* linguist-documentation

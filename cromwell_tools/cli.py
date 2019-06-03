@@ -2,12 +2,18 @@ import argparse
 import requests
 from cromwell_tools.cromwell_api import CromwellAPI
 from cromwell_tools.cromwell_auth import CromwellAuth
+from cromwell_tools import __version__
 
 
 def parser(arguments=None):
     # TODO: dynamically walk through the commands and automatcally create parsers here
 
     main_parser = argparse.ArgumentParser()
+
+    # Check the installed version of Cromwell-tools
+    main_parser.add_argument(
+        '-V', '--version', action='version', version=f'%(prog)s {__version__}'
+    )
 
     subparsers = main_parser.add_subparsers(help='sub-command help', dest='command')
 
