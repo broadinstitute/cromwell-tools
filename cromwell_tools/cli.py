@@ -209,11 +209,13 @@ def parser(arguments=None):
     # TODO: add a mutually exclusive group to make it fail early
     metadata.add_argument(
         '--includeKey',
+        nargs='+',
         default=None,
         help='When specified key(s) to include from the metadata. Matches any key starting with the value. May not be used with excludeKey.',
     )
     metadata.add_argument(
         '--excludeKey',
+        nargs='+',
         default=None,
         help='When specified key(s) to exclude from the metadata. Matches any key starting with the value. May not be used with includeKey.',
     )
