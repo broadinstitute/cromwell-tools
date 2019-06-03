@@ -41,6 +41,11 @@ def parser(arguments=None):
         help='release_hold help',
         description='Request Cromwell to release the hold on a workflow.',
     )
+    metadata = subparsers.add_parser(
+        'metadata',
+        help='metadata help',
+        description='Retrieve the workflow and call-level metadata for a specified workflow by UUID.',
+    )
     query = subparsers.add_parser(
         'query',
         help='query help',
@@ -53,7 +58,16 @@ def parser(arguments=None):
     )
 
     # cromwell url and authentication arguments apply to all sub-commands
-    cromwell_sub_commands = (submit, wait, status, abort, release_hold, query, health)
+    cromwell_sub_commands = (
+        submit,
+        wait,
+        status,
+        abort,
+        release_hold,
+        metadata,
+        query,
+        health,
+    )
     auth_args = {
         'url': 'The URL to the Cromwell server. e.g. "https://cromwell.server.org/"',
         'username': 'Cromwell username for HTTPBasicAuth.',
@@ -186,6 +200,29 @@ def parser(arguments=None):
         help='A Cromwell workflow UUID, which is the workflow identifier.',
     )
 
+    # metadata arguments
+    metadata.add_argument(
+        '--uuid',
+        required=True,
+        help='A Cromwell workflow UUID, which is the workflow identifier.',
+    )
+    # TODO: add a mutually exclusive group to make it fail early
+    metadata.add_argument(
+        '--includeKey',
+        default=None,
+        help='When specified key(s) to include from the metadata. Matches any key starting with the value. May not be used with excludeKey.',
+    )
+    metadata.add_argument(
+        '--excludeKey',
+        default=None,
+        help='When specified key(s) to exclude from the metadata. Matches any key starting with the value. May not be used with includeKey.',
+    )
+    metadata.add_argument(
+        '--expandSubWorkflows',
+        default=False,
+        help='When true, metadata for sub workflows will be fetched and inserted automatically in the metadata response.',
+    )
+
     # query arguments
     # TODO: implement CLI entry for query API.
 
@@ -200,6 +237,7 @@ def parser(arguments=None):
         'abort',
         'release_hold',
         'health',
+        'metadata',
     ):
         auth_arg_dict = {k: args.get(k) for k in auth_args.keys()}
         auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)

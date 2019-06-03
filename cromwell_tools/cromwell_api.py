@@ -93,6 +93,67 @@ class CromwellAPI(object):
         return response
 
     @classmethod
+    def metadata(
+        cls,
+        uuid,
+        auth,
+        includeKey=None,
+        excludeKey=None,
+        expandSubWorkflows=False,
+        raise_for_status=False,
+    ):
+        """Retrieve the workflow and call-level metadata for a specified workflow by UUID.
+
+        Args:
+            uuid (str): A Cromwell workflow UUID, which is the workflow identifier.
+            auth (cromwell_tools.cromwell_auth.CromwellAuth): The authentication class holding headers or auth
+                information to a Cromwell server.
+            includeKey (Optional[List]): When specified key(s) to include from the metadata. Matches any key
+                starting with the value. May not be used with excludeKey. (default None)
+            excludeKey (Optional[List]): When specified key(s) to exclude from the metadata. Matches any key
+                starting with the value. May not be used with includeKey. (default None)
+            expandSubWorkflows (Optional[bool]): When true, metadata for sub workflows will be fetched
+                and inserted automatically in the metadata response. (default False)
+            raise_for_status (Optional[bool]): Whether to check and raise for status based on the response. (default
+                False)
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
+                a response that satisfies 400 <= response.status_code < 600.
+
+        Returns:
+            requests.Response: HTTP response from Cromwell.
+        """
+
+        if excludeKey and includeKey:
+            raise ValueError('includeKey and excludeKey may not be specified together!')
+
+        params = {'expandSubWorkflows': json.dumps(expandSubWorkflows)}
+
+        if isinstance(excludeKey, str):
+            logger.info(f'Adding {excludeKey} to the request parameter list.')
+            params['excludeKey'] = [excludeKey]
+        elif isinstance(excludeKey, list) and len(excludeKey) >= 1:
+            params['excludeKey'] = excludeKey
+
+        if isinstance(includeKey, str):
+            logger.info(f'Adding {includeKey} to the request parameter list.')
+            params['includeKey'] = [includeKey]
+        elif isinstance(includeKey, list) and len(includeKey) >= 1:
+            params['includeKey'] = includeKey
+
+        response = requests.get(
+            url=auth.url + cls._metadata_endpoint.format(uuid=uuid),
+            auth=auth.auth,
+            headers=auth.header,
+            params=params,
+        )
+
+        if raise_for_status:
+            cls._check_and_raise_status(response)
+        return response
+
+    @classmethod
     def status(cls, uuid, auth, raise_for_status=False):
         """Retrieves the current state for a workflow by UUID.
 
