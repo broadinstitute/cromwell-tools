@@ -2,3 +2,4 @@
 # the 'Jupyter Notebook' doesn't dominate the repo language
 
 docs/* linguist-documentation
+*.ipynb linguist-detectable=false
