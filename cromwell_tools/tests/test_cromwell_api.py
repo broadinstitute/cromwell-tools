@@ -271,6 +271,29 @@ class TestAPI(unittest.TestCase):
                 CromwellAPI.release_hold(workflow_id, cromwell_auth).raise_for_status()
 
     @requests_mock.mock()
+    def test_metadata_returns_200(self, mock_request):
+        workflow_id = '12345abcde'
+        test_include_key = 'workflow'
+
+        def _request_callback(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'id': '12345abcde', 'actualWorkflowLanguageVersion': 'draft-2'}
+
+        for cromwell_auth in self.auth_options:
+            mock_request.get(
+                '{0}/api/workflows/v1/{1}/metadata?expandSubWorkflows=false&includeKey={2}'.format(
+                    cromwell_auth.url, workflow_id, test_include_key
+                ),
+                json=_request_callback,
+            )
+            result = CromwellAPI.metadata(
+                workflow_id, cromwell_auth, includeKey=test_include_key
+            )
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(result.json()['id'], workflow_id)
+
+    @requests_mock.mock()
     def test_health_returns_200(self, mock_request):
         expected = {
             "DockerHub": {"ok": "true"},

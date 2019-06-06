@@ -6,7 +6,7 @@ Cromwell-tools
     :alt: Container Build Status
     
 .. image:: https://img.shields.io/travis/com/broadinstitute/cromwell-tools.svg?label=Unit%20Test%20on%20Travis%20CI%20&style=flat-square
-    :target: https://travis-ci.org/broadinstitute/cromwell-tools
+    :target: https://travis-ci.com/broadinstitute/cromwell-tools
     :alt: Unit Test Status
 
 .. image:: https://img.shields.io/readthedocs/cromwell-tools/latest.svg?label=ReadtheDocs%3A%20Latest&logo=Read%20the%20Docs&style=flat-square
