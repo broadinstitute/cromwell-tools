@@ -7,8 +7,6 @@ CLASSIFIERS = [
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 2.7",
-    "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
@@ -16,7 +14,8 @@ CLASSIFIERS = [
 install_requires = [
     'requests>=2.20.0,<3',
     'six>=1.11.0',
-    'google-auth>=1.6.1,<2' 'setuptools_scm>=3.1.0,<4',
+    'google-auth>=1.6.1,<2',
+    'setuptools_scm>=3.1.0,<4',
 ]
 
 extras_require = {
