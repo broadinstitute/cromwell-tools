@@ -16,7 +16,8 @@ CLASSIFIERS = [
 install_requires = [
     'requests>=2.20.0,<3',
     'six>=1.11.0',
-    'google-auth>=1.6.1,<2' 'setuptools_scm>=3.1.0,<4',
+    'google-auth>=1.6.1,<2',
+    'setuptools_scm>=3.1.0,<4',
 ]
 
 extras_require = {
