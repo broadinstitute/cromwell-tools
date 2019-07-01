@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 from cromwell_tools import utilities
 from cromwell_tools.utilities import validate_cromwell_label
+from cromwell_tools import exceptions
 
 
 logger = logging.getLogger(__name__)
@@ -41,14 +42,6 @@ _cromwell_inclusive_query_keys = {
 _cromwell_query_keys = _cromwell_exclusive_query_keys.union(
     _cromwell_inclusive_query_keys
 )
-
-
-class WorkflowFailedException(Exception):
-    pass
-
-
-class WorkflowUnknownException(Exception):
-    pass
 
 
 # TODO: use functools partial for get, post (set the authenticate commands)
@@ -330,7 +323,7 @@ class CromwellAPI(object):
                     print(f'Workflow {uuid} returned status {status}')
 
                 if status in _failed_statuses:
-                    raise WorkflowFailedException(
+                    raise exceptions.WorkflowFailedError(
                         f'Workflow {uuid} returned status {status}'
                     )
                 elif status != 'Succeeded':
@@ -529,13 +522,13 @@ class CromwellAPI(object):
             response (requests.Response): A status response object from Cromwell.
 
         Raises:
-            WorkflowUnknownException: This will be raised when Cromwell returns a status code != 200.
+            WorkflowUnknownError: This will be raised when Cromwell returns a status code != 200.
 
         Returns:
             str: String representing status response.
         """
         if response.status_code != 200:
-            raise WorkflowUnknownException(
+            raise exceptions.WorkflowUnknownError(
                 'Status could not be determined, endpoint returned {0}'.format(
                     response.status_code
                 )
