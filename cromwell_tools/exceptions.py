@@ -8,3 +8,7 @@ class WorkflowFailedError(Error):
 
 class WorkflowUnknownError(Error):
     pass
+
+
+class CromwellAuthenticationError(Error):
+    pass
