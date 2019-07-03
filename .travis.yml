@@ -1,26 +1,26 @@
 language: python
 
 python:
-- '3.6'
+  - '3.6'
 
-install: pip install -r requirements-test.txt
+install: "pip install -r requirements-test.txt"
 
 jobs:
   include:
-  # The linting test is fast and cheap so run it first
-  - stage: Linting Test
-    script:
-    # Check Black code style compliance
-    - black ./ --skip-string-normalization --check
-    # Check PEP-8 compliance
-    - flake8
-  
-  # The unit test is a bit more expensive so run it only
-  # if the linting test passes
-  - stage: Unit Test
-    sudo: required
-    services: docker
-    script: cd cromwell_tools/tests && bash test.sh
+    # The linting test is fast and cheap so run it first
+    - stage: Linting Test
+      script:
+      # Check Black code style compliance
+      - black ./ --skip-string-normalization --check
+      # Check PEP-8 compliance
+      - flake8
+
+    # The unit test is a bit more expensive so run it only
+    # if the linting test passes
+    - stage: Unit Test
+      sudo: required
+      services: docker
+      script: cd cromwell_tools/tests && bash test.sh
 
 notifications:
   slack:
