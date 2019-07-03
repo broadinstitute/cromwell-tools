@@ -10,10 +10,10 @@ jobs:
     # The linting test is fast and cheap so run it first
     - stage: Linting Test
       script:
-      # Check Black code style compliance
-      - black ./ --skip-string-normalization --check
-      # Check PEP-8 compliance
-      - flake8
+        # Check Black code style compliance
+        - black ./ --skip-string-normalization --check
+        # Check PEP-8 compliance
+        - flake8
 
     # The unit test is a bit more expensive so run it only
     # if the linting test passes
