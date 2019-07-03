@@ -1,26 +1,17 @@
 language: python
-
 python:
-  - '3.6'
-
-install: "pip install -r requirements-test.txt"
-
+- '3.6'
+install: pip install -r requirements-test.txt
 jobs:
   include:
-    # The linting test is fast and cheap so run it first
-    - stage: Linting Test
-      script: 
-        # Check Black code style compliance
-        - black ./ --skip-string-normalization --check
-        # Check PEP-8 compliance
-        - flake8
-
-    # The unit test is a bit more expensive so run it only
-    # if the linting test passes
-    - stage: Unit Test
-      sudo: required
-      services: docker
-      script: cd cromwell_tools/tests && bash test.sh
+  - stage: Linting Test
+    script:
+    - black ./ --skip-string-normalization --check
+    - flake8
+  - stage: Unit Test
+    sudo: required
+    services: docker
+    script: cd cromwell_tools/tests && bash test.sh
 
 notifications:
   slack:
@@ -28,3 +19,13 @@ notifications:
     on_failure: always
     rooms:
       secure: BxG063EvQkN1zuFWwMrbtWz3jjHmSDOj9TQIipfXSwZtMJ3d9eWHh6knDPTtW7yNIuvapZI7xvdX/7hRLW01EyO2jXxVyLa1KP64RShwRZ9x1M5uORrmu2nYFdBDr7ETlsxku/X7yKIzC9pglDkl9q8UXII72bamHZCl5VnBDlel93wNgj0VfKax6l3I87zqOtq6HSHm4LwpELUI6NzgtufTDBgsrHosC+uiyqtcXDNlunGh3sXD36o3qVvuSQcUweBszr8DkF/Io0lDHnbL6kYInTuSbWJQX5ZVjppPZqyrhGeE6Q70fbOeUzYCwuQE42pxTDtnwoYPBhQQwjCZ7ljhDm7ZbuailA8bMkk/c3anIYodkt1oW/B43qtdFANzWOmSotgvjAZj5zF+qJLT7knQivWgL4oDmauevmpW4G/RklWTfXh9MpbRFnwtqCcbEJVmck3xEevQdGd7EmNWkDZ/1ktfslwOHYvmI3Bci7gRADknDJhNp+ykqub0QXD4jUOgFD5xoqgtn//F+yB+fhO2IptpkFcKc0nnH4qDJbfa0PwlYIt0Ecn9xAaQ1rHB7lJCKTjXK8El5IgqmcS4T0ftKCKmQHWayr3iiLwNwLoZMejwJcwEFmzmn8O3/TUzXSEedeD2/dU8z/6fN2FiXw7CSD4vxWby3yiopcKkkQk=
+
+deploy:
+  provider: pypi
+  user:
+    secure: mhbpuIehdZFh8EHX9S41yg9L1v5Ek5PmypmzaRYiISGdVTuHn7hxeCRL5I8fxEMuphARN2KhsYTJWePBlPkWyCIo+nFWRAx8V4dmgddms8Jthxukre4g4BaSJO3B0cIMqXTAUaApvhkWDKQx8Um6v6iX9gr3ZuNS9s2hNglb1okD2uKEEkYM3vQ0UfvL4m+gw+YVR0WB5OJVZ9mjvWok/wL9rP4CJTdMpXtFGQpgG+D2Z6Bpz/CWH2zpgxB7MRCH4UpRB/UlS9iFvMILuWpGiqduiHTb5hLhjoO6MuDjTPHEi5xnkxHrBgU9di3Io0fjT3ex068zaHkduLdTTpbhQ69rl0ohPMyRzoe++J3V9tMDSLluCSzHNVHhFOCyxS2XJChfVer9aQaqsrv5Lu2JjaC8rsiX0Ci1s3qqSvWjC6E+PcN7vj6+kKGXc9FijgVNZ3wuY6OznwgyK2/g4MoAdY9cjzHyTf5VGQZvpLxarWbGJ4AMzIeNxcBfFUDhO8sj/jAClgV7m9OgTzy153Kqmfmz8GKjg9JC43L2Ot9VrjrNoOmK8V8N8ks2ALdPsjo3hT5GcXc1Ou6DmJ2r+tmAkoHY+rIAM1zlcntlUm1IkYhRX2wnacWygjs63TgenRl2nKXBmEs/TvAWf9DXFvOxkr5/Tg/6jP5wbCNiqx2gViM=
+  password:
+    secure: l6llD9uQCf3NFt7HZCTq9Wy+/rIe/p9A0MQ3WIF4f7rKU6+qTnPZDduRtR/5d8T5M6rSO3kNli5HEf4ZYgy2dXstU7lNrZ3rnedGOmIfjzDDiCzNsSuKXV00Vl4HWzEHySszeYrJ36XJTgQRLD4jrunShLLfT97tJug1ACtU+t6DErez1knc8Y5/zJWZ40VX8/E7AfDo4b8dtu8iWpJSdt5tGt+kzjavtwTYzzKxFEgKFTazJOSobdByh86/pNjGo1/7/23a6YzHozidhCXj3qc3Ib9RKzLBFfc37/FXamyVGDRXjS8qRlfSxMZaHQXRWazsi7fuSZuFxOudgojzUdRaZLK7RSDnhc1dwnMBZqS4sDyPo1MPBUIm2J41vgtRZJX2Sa7XWdT4OpsLq/dP3otwndHSQ1qqgQP3jfCG+k54VlXsgvtCRmPC8Gb4HswxzRwyp2G5RZcvkHB7hvjZfVO7mtpBESDrdm9/AG7miARNEnnRr4e2ePmUj0lPJFjbOvN0O+v5La76pXo1U1gah7zXLEXtdkvH1OUJKTEOr7fqOl96GaSLABLg3O6Lp9wIfumqdPtU0z4NDNaPVx1YJkIGf8JZFSKjp9frab2PSswChPTB13VT+LkETFMrDkErQ9gwqQ+dPDBvln4D7gp90HN8L3k8vWuIUfJXXxbxHew=
+  on:
+    tags: true
+  skip_existing: true
