@@ -1,3 +1,11 @@
+"""
+TODO: add some module docs
+TODO: once switched to support only Py3.7+, replace all 'cls'
+type annotations with the actual Types, rather than using the strings.
+This in Py3.6(-) is limited by the lack of Postponed Evaluation of Annotations, see:
+https://www.python.org/dev/peps/pep-0563/
+"""
+
 import json
 import requests
 import requests.auth
@@ -5,33 +13,35 @@ import six
 from google.oauth2 import service_account
 import google.auth.transport.requests
 import logging
+from typing import Union, Dict
 
 logger = logging.getLogger(__name__)
 
 
-class AuthenticationError(Exception):
-    pass
-
-
 class CromwellAuth:
     def __init__(
-        self, url, header, auth, oauth_credentials=None, service_key_content=None
-    ):
+        self,
+        url: str,
+        header: Dict[str, str] = None,
+        auth: requests.auth.HTTPBasicAuth = None,
+        oauth_credentials: service_account.Credentials = None,
+        service_key_content: dict = None,
+    ) -> None:
         """Authentication Helper Class for a Cromwell Server.
 
-        Currently this class only supports 3 Auth methods with Cromwell:
+        Currently this class only supports 3 AuthN methods with Cromwell:
             - OAuth2 through Google by passing a service account JSON key file.
             - HTTPBasic Authentication.
             - No Auth
 
         Args:
-            url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
-            header (dict or None): Dictionary containing the (bearer token) authorization header.
-            auth (requests.auth.HTTPBasicAuth or None): HTTP Basic Authentication information,
+            url: The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+            header: Dictionary containing the (bearer token) authorization header.
+            auth: HTTP Basic Authentication information,
                 i.e. username and password.
-            oauth_credentials (service_account.Credentials or None): Optional, service_account.Credentials object,
+            oauth_credentials: Optional, service_account.Credentials object,
             used for refreshing the Authentication headers when using OAuth.
-            service_key_content (dict): Optional, required by JES-backend Cromwells that use OAuth.
+            service_key_content: Optional, required by JES-backend Cromwells that use OAuth.
         """
 
         # TODO: add a step to validate the auth information with Cromwell Server, requires /auth endpoint from Cromwell
@@ -67,13 +77,15 @@ class CromwellAuth:
         return self._header
 
     @staticmethod
-    def _validate_auth(header, auth):
+    def _validate_auth(
+        header: Union[Dict[str, str], None],
+        auth: Union[requests.auth.HTTPBasicAuth, None],
+    ) -> None:
         """Validate the format of the auth header and the HTTPBasic Auth credentials.
 
         Args:
-            header (dict or None): Dictionary containing the (bearer token) authorization header.
-            auth (requests.auth.HTTPBasicAuth or None): HTTP Basic Authentication information,
-                i.e. username and password.
+            header: Dictionary containing the (bearer token) authorization header.
+            auth: HTTP Basic Authentication information, i.e. username and password.
 
         Raises:
             TypeError: when header is not a valid `dict` or the auth object is not a valid
@@ -100,14 +112,14 @@ class CromwellAuth:
             )
 
     @staticmethod
-    def _validate_url(url):
+    def _validate_url(url: str) -> str:
         """Validate the input Cromwell url and remove the trailing slash.
 
         Args:
-            url (str or unicode): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+            url: The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
 
         Returns:
-            str: The URL to the Cromwell server without slash at the end. e.g. "https://cromwell.server.org"
+            The URL to the Cromwell server without slash at the end. e.g. "https://cromwell.server.org"
 
         Raises:
             ValueError: If the input url is invalid, i.e. not following http(s) schema.
@@ -118,19 +130,21 @@ class CromwellAuth:
             raise ValueError("url must be an str pointing to an http(s) endpoint.")
 
     @classmethod
-    def from_service_account_key_file(cls, service_account_key, url):
+    def from_service_account_key_file(
+        cls: 'CromwellAuth', service_account_key: Union[str, dict], url: str
+    ) -> 'CromwellAuth':
         """Generate an authentication object from a Service Account JSON key file.
 
         The service account key file will be required if you are using Cromwell-as-a-Service or
         you are using OAuth for your Cromwell Server.
 
         Args:
-            service_account_key (str or dict): Path to the JSON key file(service account key), or a dict of
+            service_account_key: Path to the JSON key file(service account key), or a dict of
                 the JSON content of the key file, for authenticating with CaaS.
-            url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+            url: The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
 
         Returns:
-            CromwellAuth: An instance of this auth helper class with valid OAuth Auth header.
+            An instance of this auth helper class with valid OAuth Auth header.
         """
         scopes = ['email', 'openid', 'profile']
         if isinstance(service_account_key, dict):
@@ -158,11 +172,11 @@ class CromwellAuth:
         )
 
     @classmethod
-    def from_secrets_file(cls, secrets_file):
+    def from_secrets_file(cls: 'CromwellAuth', secrets_file: str) -> 'CromwellAuth':
         """Generate an authentication object from a JSON file that contains credentials info for HTTPBasicAuth.
 
         Args:
-            secrets_file (str): Path to the JSON file containing username, password, and url fields. e.g.
+            secrets_file: Path to the JSON file containing username, password, and url fields. e.g.
                 {
                     "username": "",
                     "password": "",
@@ -170,7 +184,7 @@ class CromwellAuth:
                 }
 
         Returns:
-            CromwellAuth: An instance of this auth helper class with valid u/p and url for HTTPBasicAuth.
+            An instance of this auth helper class with valid u/p and url for HTTPBasicAuth.
         """
         with open(secrets_file, 'r') as f:
             secrets = json.load(f)
@@ -179,58 +193,60 @@ class CromwellAuth:
         return cls(url=url, header=None, auth=auth)
 
     @classmethod
-    def from_user_password(cls, username, password, url):
+    def from_user_password(
+        cls: 'CromwellAuth', username: str, password: str, url: str
+    ) -> 'CromwellAuth':
         """Generate an authentication object from username, password, and Cromwell url.
 
         Args:
-            username (str): Cromwell username for HTTPBasicAuth.
-            password (str): Cromwell password for HTTPBasicAuth.
-            url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+            username: Cromwell username for HTTPBasicAuth.
+            password: Cromwell password for HTTPBasicAuth.
+            url: The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
 
         Returns:
-            CromwellAuth: An instance of this auth helper class with valid u/p and url for HTTPBasicAuth.
+            An instance of this auth helper class with valid u/p and url for HTTPBasicAuth.
         """
         auth = requests.auth.HTTPBasicAuth(username, password)
         return cls(url=url, header=None, auth=auth)
 
     @classmethod
-    def from_no_authentication(cls, url):
+    def from_no_authentication(cls: 'CromwellAuth', url: str) -> 'CromwellAuth':
         """Generate an authentication object which does use any auth methods.
 
         Args:
-            url (str): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+            url: The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
 
         Returns:
-            CromwellAuth: An instance of this auth helper class with url and has no auth methods.
+            An instance of this auth helper class with url and has no auth methods.
         """
         return cls(url=url, header=None, auth=None)
 
     @classmethod
     def harmonize_credentials(
-        cls,
-        username=None,
-        password=None,
-        url=None,
-        secrets_file=None,
-        service_account_key=None,
-    ):
+        cls: 'CromwellAuth',
+        username: str = None,
+        password: str = None,
+        url: str = None,
+        secrets_file: str = None,
+        service_account_key: str = None,
+    ) -> 'CromwellAuth':
         """Parse and harmonize user inputted credentials and generate proper authentication object for cromwell-tools.
 
         Args:
-            username (str or None): Cromwell username for HTTPBasicAuth.
-            password (str or None): Cromwell password for HTTPBasicAuth.
-            url (str or None): The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
-            secrets_file (str or None): Path to the JSON file containing username, password, and url fields. e.g.
+            username: Cromwell username for HTTPBasicAuth.
+            password: Cromwell password for HTTPBasicAuth.
+            url: The URL to the Cromwell server. e.g. "https://cromwell.server.org/"
+            secrets_file: Path to the JSON file containing username, password, and url fields. e.g.
                 {
                     "username": "",
                     "password": "",
                     "url": ""
                 }
-            service_account_key (str or None): Path to the JSON key file(service account key) for authenticating
+            service_account_key: Path to the JSON key file(service account key) for authenticating
                 with CaaS or any Cromwell instances that using OAuth.
 
         Returns:
-            CromwellAuth: An instance of this auth helper class with proper credentials for authenticating with
+            An instance of this auth helper class with proper credentials for authenticating with
                 Cromwell or CaaS.
         """
         # verify only one credential provided
