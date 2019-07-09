@@ -20,7 +20,9 @@ jobs:
     - stage: Unit Test
       sudo: required
       services: docker
-      script: cd cromwell_tools/tests && bash test.sh
+      script: 
+        - cd cromwell_tools/tests && bash test.sh
+        - cd -
 
 notifications:
   slack:
