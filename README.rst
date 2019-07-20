@@ -77,7 +77,9 @@ In Python, you can import the package with:
     import cromwell_tools.api as cwt
     cwt.submit(*args)
 
-assuming args is a list of arguments needed. For more details, please check the example `Quickstart Jupyter Notebook <https://github.com/broadinstitute/cromwell-tools/tree/master/notebooks/Tutorials/Quickstart/quickstart.ipynb>`_.
+assuming args is a list of arguments needed. 
+
+For more details, please check the tutorial on `Read the Docs <https://cromwell-tools.readthedocs.io/en/latest/Tutorials/Quickstart/api_quickstart.html>`_.
 
 Commandline Interface
 ---------------------
@@ -109,6 +111,8 @@ This package also installs a command line interface that mirrors the API and is 
 
 A set of sub-commands to submit, query, abort, release on-hold workflows, wait for workflow completion and determining
 status of jobs are exposed by this CLI.
+
+For more details, please check the tutorial on `Read the Docs <https://cromwell-tools.readthedocs.io/en/latest/Tutorials/Quickstart/cli_quickstart.html>`_.
 
 
 Testing
