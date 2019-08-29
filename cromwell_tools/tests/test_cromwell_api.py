@@ -229,7 +229,7 @@ class TestAPI(unittest.TestCase):
     @requests_mock.mock()
     def test_path_labels_returns_200(self, mock_request):
         workflow_id = 'labeltest'
-        new_label = {'foo':'bar'}
+        new_label = {'foo': 'bar'}
 
         def _request_callback(request, context):
             context.status_code = 200

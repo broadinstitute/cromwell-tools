@@ -442,7 +442,7 @@ class CromwellAPI(object):
         uuid: str,
         labels: Dict[str, str],
         auth: CromwellAuth,
-        raise_for_status: bool = False
+        raise_for_status: bool = False,
     ) -> requests.Response:
         """Add new labels or patch existing labels for an existing workflow.
 
