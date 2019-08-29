@@ -227,6 +227,28 @@ class TestAPI(unittest.TestCase):
             CromwellAPI._compose_query_params(query_dict)
 
     @requests_mock.mock()
+    def test_path_labels_returns_200(self, mock_request):
+        workflow_id = 'labeltest'
+        new_label = {'foo':'bar'}
+
+        def _request_callback(request, context):
+            context.status_code = 200
+            context.headers['test'] = 'header'
+            return {'id': request.url.split('/')[-2], 'labels': new_label}
+
+        for cromwell_auth in self.auth_options:
+            mock_request.patch(
+                '{0}/api/workflows/v1/{1}/labels'.format(
+                    cromwell_auth.url, workflow_id
+                ),
+                json=_request_callback,
+            )
+            result = CromwellAPI.patch_labels(workflow_id, new_label, cromwell_auth)
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(result.json()['id'], workflow_id)
+            self.assertEqual(result.json()['labels'], new_label)
+
+    @requests_mock.mock()
     def test_release_onhold_returns_200(self, mock_request):
         workflow_id = '12345abcde'
 
