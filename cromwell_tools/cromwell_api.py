@@ -63,6 +63,7 @@ class CromwellAPI(object):
     _health_endpoint = '/engine/v1/status'
     _release_hold_endpoint = '/api/workflows/v1/{uuid}/releaseHold'
     _query_endpoint = '/api/workflows/v1/query'
+    _labels_endpoint = '/api/workflows/v1/{uuid}/labels'
 
     @classmethod
     def abort(
@@ -428,6 +429,41 @@ class CromwellAPI(object):
         response = requests.post(
             url=auth.url + cls._query_endpoint,
             json=query_params,
+            auth=auth.auth,
+            headers=auth.header,
+        )
+        if raise_for_status:
+            cls._check_and_raise_status(response)
+        return response
+
+    @classmethod
+    def patch_labels(
+        cls: 'CromwellAPI',
+        uuid: str,
+        labels: Dict[str, str],
+        auth: CromwellAuth,
+        raise_for_status: bool = False,
+    ) -> requests.Response:
+        """Add new labels or patch existing labels for an existing workflow.
+
+        Args:
+            uuid: A Cromwell workflow UUID, which is the workflow identifier.
+            labels: A dictionary representing the label key-value pairs.
+            auth: The authentication class holding headers or auth
+                information to a Cromwell server.
+            raise_for_status: Whether to check and raise for status based on the response.
+
+        Raises:
+            requests.exceptions.HTTPError: This will be raised when raise_for_status is True and Cromwell returns
+                a response that satisfies 400 <= response.status_code < 600.
+
+        Returns:
+            HTTP response from Cromwell.
+        """
+
+        response = requests.patch(
+            url=auth.url + cls._labels_endpoint.format(uuid=uuid),
+            json=labels,
             auth=auth.auth,
             headers=auth.header,
         )
