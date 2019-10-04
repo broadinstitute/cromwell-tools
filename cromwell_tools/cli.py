@@ -2,7 +2,13 @@ import argparse
 import requests
 from cromwell_tools.cromwell_api import CromwellAPI
 from cromwell_tools.cromwell_auth import CromwellAuth
+from cromwell_tools.diag import task_runtime
 from cromwell_tools import __version__
+
+
+diagnostic_index = {
+    'task_runtime': task_runtime.run
+}
 
 
 def parser(arguments=None):
@@ -56,6 +62,11 @@ def parser(arguments=None):
         help='health help',
         description='Check that cromwell is running and that provided authentication is valid.',
     )
+    task_runtime = subparsers.add_parser(
+        'task_runtime',
+        help='task_runtime help',
+        description='Output tsv breakdown of task runtimes by execution event categories',
+    )
 
     # cromwell url and authentication arguments apply to all sub-commands
     cromwell_sub_commands = (
@@ -67,6 +78,7 @@ def parser(arguments=None):
         metadata,
         query,
         health,
+        task_runtime,
     )
     auth_args = {
         'url': 'The URL to the Cromwell server. e.g. "https://cromwell.server.org/"',
@@ -224,7 +236,17 @@ def parser(arguments=None):
         default=False,
         help='When true, metadata for sub workflows will be fetched and inserted automatically in the metadata response.',
     )
-
+    either_runtime = task_runtime.add_mutually_exclusive_group(required=True)
+    either_runtime.add_argument(
+        '--metadata',
+        dest='metadata',
+        help='Metadata json file to calculate cost on',
+    )
+    either_runtime.add_argument(
+        '--uuid',
+        dest='uuid',
+        help='A Cromwell workflow UUID, which is the workflow identifier.',
+    )
     # query arguments
     # TODO: implement CLI entry for query API.
 
@@ -240,6 +262,7 @@ def parser(arguments=None):
         'release_hold',
         'health',
         'metadata',
+        'task_runtime',
     ):
         auth_arg_dict = {k: args.get(k) for k in auth_args.keys()}
         auth = CromwellAuth.harmonize_credentials(**auth_arg_dict)
@@ -247,7 +270,12 @@ def parser(arguments=None):
         for k in auth_args:
             if k in args:
                 del args[k]
-    command = getattr(CromwellAPI, args['command'])
+    command = getattr(CromwellAPI, args['command'], False)
+    if not command:
+        try:
+            command = diagnostic_index[args['command']]
+        except KeyError:
+            raise KeyError(f"{args['command']} is not a valid command.")         
     del args['command']
     return command, args
 
@@ -256,8 +284,8 @@ def parser(arguments=None):
 # TODO: refactor this module into class-based parsers
 def main(arguments=None):
     command, args = parser(arguments)
-    API_result = command(**args)
-    if isinstance(API_result, requests.Response):
-        print(API_result.text)
+    result = command(**args)
+    if isinstance(result, requests.Response):
+        print(result.text)
     else:
-        print(API_result)
+        print(result)
