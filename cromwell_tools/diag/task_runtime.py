@@ -9,6 +9,7 @@ from googleapiclient import discovery
 from google.oauth2 import service_account
 from cromwell_tools.cromwell_api import CromwellAPI
 from cromwell_tools.cromwell_auth import CromwellAuth
+from cromwell_tools import exceptions
 
 
 OUTPUT_HEADER = "\t".join(
@@ -243,6 +244,6 @@ def run(
         metadata = response.json()
 
     if auth.service_key_content is None:
-        raise Exception("task_runtime requires a service account key")
+        raise exceptions.CromwellAuthenticationError("task_runtime requires a service account key")
     
     print_task_runtime_data(metadata, auth.service_key_content)
