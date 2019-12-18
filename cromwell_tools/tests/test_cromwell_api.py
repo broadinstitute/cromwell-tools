@@ -214,7 +214,7 @@ class TestAPI(unittest.TestCase):
         )
 
     def test_compose_query_params_raises_error_for_invalid_query_dict_that_has_multiple_values_for_exclusive_keys(
-        self
+        self,
     ):
         query_dict = {
             'status': ['Running', 'Failed', 'Submitted'],

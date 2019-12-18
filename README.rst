@@ -5,8 +5,8 @@ Cromwell-tools
     :target: https://quay.io/repository/broadinstitute/cromwell-tools
     :alt: Container Build Status
     
-.. image:: https://img.shields.io/travis/com/broadinstitute/cromwell-tools.svg?label=Unit%20Test%20on%20Travis%20CI%20&style=flat-square
-    :target: https://travis-ci.com/broadinstitute/cromwell-tools
+.. image:: https://github.com/broadinstitute/cromwell-tools/workflows/Tests%20on%20Pull%20Requests%20and%20Master/badge.svg?branch=master
+    :target: https://github.com/broadinstitute/cromwell-tools/actions?query=workflow%3A%22Tests+on+Pull+Requests+and+Master%22+branch%3Arex-switch-to-GithubActions
     :alt: Unit Test Status
 
 .. image:: https://img.shields.io/readthedocs/cromwell-tools/latest.svg?label=ReadtheDocs%3A%20Latest&logo=Read%20the%20Docs&style=flat-square
@@ -21,8 +21,8 @@ Cromwell-tools
     :target: https://img.shields.io/github/license/broadinstitute/cromwell-tools.svg?style=flat-square
     :alt: License
 
-.. image:: https://img.shields.io/badge/python-3.6-green.svg?style=flat-square&logo=python&colorB=blue
-    :target: https://img.shields.io/badge/python-3.6-green.svg?style=flat-square&logo=python&colorB=blue
+.. image:: https://img.shields.io/badge/python-3.6|3.7-green.svg?style=flat-square&logo=python&colorB=blue
+    :target: https://img.shields.io/badge/python-3.6|3.7-green.svg?style=flat-square&logo=python&colorB=blue
     :alt: Language
 
 .. image:: https://img.shields.io/badge/Code%20Style-black-000000.svg?style=flat-square
