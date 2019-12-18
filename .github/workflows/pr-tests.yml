@@ -26,9 +26,9 @@ jobs:
     - name: Lint Tests
       run: |
         # Check Black code style compliance
-        - black ./ --skip-string-normalization --check
+        black ./ --skip-string-normalization --check
         # Check PEP-8 compliance
-        - flake8
+        flake8
 
     - name: Unit Tests
       run: |
