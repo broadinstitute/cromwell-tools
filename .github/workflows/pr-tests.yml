@@ -26,4 +26,5 @@ jobs:
         # Check PEP-8 compliance
         - flake8
     - name: Unit Tests
-    - run: python -m pytest --cov=cromwell_tools cromwell_tools/tests
+      run: |
+        python -m pytest --cov=cromwell_tools cromwell_tools/tests
