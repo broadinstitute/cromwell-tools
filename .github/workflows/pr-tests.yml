@@ -1,5 +1,5 @@
 # This workflow triggers tests on PRs that targets master branch
-name: Tests on Pull Requests
+name: Tests on Pull Requests and Master
 
 on:
   push:
