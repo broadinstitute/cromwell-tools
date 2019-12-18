@@ -6,9 +6,7 @@ from cromwell_tools.diag import task_runtime
 from cromwell_tools import __version__
 
 
-diagnostic_index = {
-    'task_runtime': task_runtime.run
-}
+diagnostic_index = {'task_runtime': task_runtime.run}
 
 
 def parser(arguments=None):
@@ -238,9 +236,7 @@ def parser(arguments=None):
     )
     either_runtime = task_runtime.add_mutually_exclusive_group(required=True)
     either_runtime.add_argument(
-        '--metadata',
-        dest='metadata',
-        help='Metadata json file to calculate cost on',
+        '--metadata', dest='metadata', help='Metadata json file to calculate cost on',
     )
     either_runtime.add_argument(
         '--uuid',
@@ -275,7 +271,7 @@ def parser(arguments=None):
         try:
             command = diagnostic_index[args['command']]
         except KeyError:
-            raise KeyError(f"{args['command']} is not a valid command.")         
+            raise KeyError(f"{args['command']} is not a valid command.")
     del args['command']
     return command, args
 
