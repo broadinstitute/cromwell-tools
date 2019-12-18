@@ -254,12 +254,12 @@ def parser(arguments=None):
     # query arguments
     # TODO: implement CLI entry for query API.
 
-    # Return help messages if no arguments provided
-    if not arguments:
-        main_parser.error("No arguments provided.")
-
     # group all of the arguments
     args = vars(main_parser.parse_args(arguments))
+
+    # Return help messages if no arguments provided
+    if not args['command']:
+        main_parser.error("No commands/arguments provided!")
 
     # TODO: see if this can be moved or if the commands can be populated from above
     if args['command'] in (
