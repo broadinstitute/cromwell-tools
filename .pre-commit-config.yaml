@@ -1,9 +1,9 @@
 repos:
 -   repo: https://github.com/ambv/black
-    rev: 19.3b0
+    rev: 19.10b0
     hooks:
     - id: black
-      language_version: python3.6
+      language_version: python3
       # Using args here is not recommended by Black:
       # https://black.readthedocs.io/en/stable/version_control_integration.html
       # But since we only have one argument here, and

@@ -238,7 +238,7 @@ class TestUtilities(unittest.TestCase):
         )
 
     def test_prepare_workflow_manifest_works_for_multiple_inputs_files_with_filepath(
-        self
+        self,
     ):
         manifest = utils.prepare_workflow_manifest(
             wdl_file=self.wdl_file_path, inputs_files=self.inputs_file_path_list
@@ -259,7 +259,7 @@ class TestUtilities(unittest.TestCase):
         )
 
     def test_prepare_workflow_manifest_works_for_multiple_inputs_files_with_BytesIO(
-        self
+        self,
     ):
         manifest = utils.prepare_workflow_manifest(
             wdl_file=self.wdl_file_path, inputs_files=self.inputs_file_BytesIO_list
@@ -294,7 +294,7 @@ class TestUtilities(unittest.TestCase):
         )
 
     def test_prepare_workflow_manifest_raises_an_error_for_dependencies_file_with_filepath_not_pointing_to_zip(
-        self
+        self,
     ):
         with self.assertRaises(ValueError):
             utils.prepare_workflow_manifest(
@@ -302,7 +302,7 @@ class TestUtilities(unittest.TestCase):
             )
 
     def test_prepare_workflow_manifest_works_for_dependencies_file_with_filepath_in_a_list(
-        self
+        self,
     ):
         manifest = utils.prepare_workflow_manifest(
             wdl_file=self.wdl_file_path, dependencies=[self.deps_zip_file_path]
@@ -318,7 +318,7 @@ class TestUtilities(unittest.TestCase):
         )
 
     def test_prepare_workflow_manifest_works_for_dependencies_file_with_list_of_files(
-        self
+        self,
     ):
         manifest = utils.prepare_workflow_manifest(
             wdl_file=self.wdl_file_path, dependencies=self.deps_files_paths_list
@@ -433,7 +433,7 @@ class TestUtilities(unittest.TestCase):
         )
 
     def test_compose_oauth_options_for_jes_backend_cromwell_add_required_fields_to_workflow_options(
-        self
+        self,
     ):
         test_url = 'https://fake_url'
         test_service_account_key = 'data/fake_account_key.json'
@@ -469,7 +469,7 @@ class TestUtilities(unittest.TestCase):
         )
 
     def test_if_compose_oauth_options_for_jes_backend_cromwell_can_deal_with_null_workflow_options(
-        self
+        self,
     ):
         test_url = 'https://fake_url'
         test_service_account_key = 'data/fake_account_key.json'

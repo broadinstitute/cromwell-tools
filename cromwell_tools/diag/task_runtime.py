@@ -1,6 +1,4 @@
-import argparse
 import json
-import requests
 import dateutil.parser
 import re
 from itertools import groupby
@@ -13,17 +11,37 @@ from cromwell_tools import exceptions
 
 
 OUTPUT_HEADER = "\t".join(
-    ["Task Name", "Job ID", "Shard Index", "Latest Attempt #", "Status", "Machine Type",
-     "CPUs", "Mem (Mbs)", "Preemptible?", "Total Runtime (Minutes)",
-     "Cromwell Preprocessing", "Waiting for Quota", "VM Setup",
-     "Pulling Google SDK", "Pulling Docker(s)", "Localization",
-     "User Action / Running Docker", "Delocalization", "VM Shutdown",
-     "Cromwell Postprocessing"])
+    [
+        "Task Name",
+        "Job ID",
+        "Shard Index",
+        "Latest Attempt #",
+        "Status",
+        "Machine Type",
+        "CPUs",
+        "Mem (Mbs)",
+        "Preemptible?",
+        "Total Runtime (Minutes)",
+        "Cromwell Preprocessing",
+        "Waiting for Quota",
+        "VM Setup",
+        "Pulling Google SDK",
+        "Pulling Docker(s)",
+        "Localization",
+        "User Action / Running Docker",
+        "Delocalization",
+        "VM Shutdown",
+        "Cromwell Postprocessing",
+    ]
+)
 
 CROMWELL_PREPROCESSING = [
     # Shared
-    "Pending", "WaitingForValueStore", "RequestingExecutionToken",
-    "PreparingJob", "RunningJob"
+    "Pending",
+    "WaitingForValueStore",
+    "RequestingExecutionToken",
+    "PreparingJob",
+    "RunningJob",
 ]
 WAITING_FOR_QUOTA = [
     # Shared
@@ -33,9 +51,11 @@ VM_SETUP = [
     # PAPI-v2
     re.compile("Worker .*assigned"),
     # Shared
-    "Background", "ContainerSetup",
+    "Background",
+    "ContainerSetup",
     # PAPI-v1
-    "initializing VM", "start"
+    "initializing VM",
+    "start",
 ]
 PULLING_GOOGLE_SDK = [
     # PAPI-v2
@@ -45,35 +65,36 @@ PULLING_DOCKER = [
     # PAPI-v2
     re.compile("Pulling \"(?!google)"),
     # PAPI-v1
-    "pulling-image"
+    "pulling-image",
 ]
 LOCALIZATION = [
     # PAPI-v2
     "Localization",
     # PAPI-v1
-    re.compile("^localizing-files")
+    re.compile("^localizing-files"),
 ]
 ACTION = [
     # PAPI-v2
     "UserAction",
     # PAPI-v1
-    "running-docker"
+    "running-docker",
 ]
 DELOCALIZATION = [
     # PAPI-v2
     "Delocalization",
     # PAPI-v1
-    "delocalizing-files"
+    "delocalizing-files",
 ]
 VM_SHUTDOWN = [
     # PAPI-v2
     "Worker released",
     # PAPI-v1
-    "ok"
+    "ok",
 ]
 CROMWELL_POSTPROCESSING = [
     # Shared
-    "UpdatingCallCache", "UpdatingJobStore"
+    "UpdatingCallCache",
+    "UpdatingJobStore",
 ]
 
 
@@ -107,7 +128,7 @@ def flatten_subworkflow_tasks(calls):
                 task['name'] = task_name
                 flat_tasks.append(task)
     return flat_tasks
-    
+
 
 def time_elapsed(start_stamp, end_stamp):
     start = dateutil.parser.parse(start_stamp)
@@ -125,16 +146,15 @@ def is_event_type(event, event_type):
             match = match or identifier in description
         else:
             match = match or identifier.match(description)
-    
+
     return match
 
 
 def exec_event_type_time(execution_events, event_type):
     events_of_type = [
-        event for event in execution_events
-        if is_event_type(event, event_type)
+        event for event in execution_events if is_event_type(event, event_type)
     ]
-    if len(events_of_type) is 0:
+    if len(events_of_type) == 0:
         return 'N/A'
     else:
         times = [
@@ -154,8 +174,7 @@ def parse_machine_type(raw_value):
 def get_machine_types(project, service_account_json):
     scopes = ['https://www.googleapis.com/auth/compute']
     credentials = service_account.Credentials.from_service_account_info(
-        service_account_json,
-        scopes=scopes
+        service_account_json, scopes=scopes
     )
     service = discovery.build('compute', 'v1', credentials=credentials)
     request = service.machineTypes().aggregatedList(project=project)
@@ -193,28 +212,30 @@ def output_row(task, machine_types):
     runtime = task['runtimeAttributes']
     machine_type = parse_machine_type(task['jes']['machineType'])
     cpus, mem = specs_from_machine(machine_type, machine_types)
-    return "\t".join([
-        task['name'],
-        task['jobId'],
-        str(task['shardIndex']),
-        str(task['attempt']),
-        task['executionStatus'],
-        machine_type,
-        str(cpus),
-        str(mem),
-        str(task['preemptible']),
-        str(time_elapsed(task['start'], task['end'])),
-        exec_event_type_time(events, CROMWELL_PREPROCESSING),
-        exec_event_type_time(events, WAITING_FOR_QUOTA),
-        exec_event_type_time(events, VM_SETUP),
-        exec_event_type_time(events, PULLING_GOOGLE_SDK),
-        exec_event_type_time(events, PULLING_DOCKER),
-        exec_event_type_time(events, LOCALIZATION),
-        exec_event_type_time(events, ACTION),
-        exec_event_type_time(events, DELOCALIZATION),
-        exec_event_type_time(events, VM_SHUTDOWN),
-        exec_event_type_time(events, CROMWELL_POSTPROCESSING)
-    ])
+    return "\t".join(
+        [
+            task['name'],
+            task['jobId'],
+            str(task['shardIndex']),
+            str(task['attempt']),
+            task['executionStatus'],
+            machine_type,
+            str(cpus),
+            str(mem),
+            str(task['preemptible']),
+            str(time_elapsed(task['start'], task['end'])),
+            exec_event_type_time(events, CROMWELL_PREPROCESSING),
+            exec_event_type_time(events, WAITING_FOR_QUOTA),
+            exec_event_type_time(events, VM_SETUP),
+            exec_event_type_time(events, PULLING_GOOGLE_SDK),
+            exec_event_type_time(events, PULLING_DOCKER),
+            exec_event_type_time(events, LOCALIZATION),
+            exec_event_type_time(events, ACTION),
+            exec_event_type_time(events, DELOCALIZATION),
+            exec_event_type_time(events, VM_SHUTDOWN),
+            exec_event_type_time(events, CROMWELL_POSTPROCESSING),
+        ]
+    )
 
 
 def print_task_runtime_data(metadata, service_account_json):
@@ -225,25 +246,20 @@ def print_task_runtime_data(metadata, service_account_json):
     [print(output_row(task, machine_types)) for task in tasks]
 
 
-def run(
-    auth: CromwellAuth,
-    metadata: str = None,
-    uuid: str = None
-):
+def run(auth: CromwellAuth, metadata: str = None, uuid: str = None):
     if metadata is not None:
-        with open(args.metadata) as data_file:
+        with open(metadata) as data_file:
             metadata = json.load(data_file)
     # cli top level parsing ensures metadata is set otherwise
     else:
         response = CromwellAPI.metadata(
-            uuid=uuid,
-            auth=auth,
-            expandSubWorkflows=True,
-            raise_for_status=True,
-        ) 
+            uuid=uuid, auth=auth, expandSubWorkflows=True, raise_for_status=True,
+        )
         metadata = response.json()
 
     if auth.service_key_content is None:
-        raise exceptions.CromwellAuthenticationError("task_runtime requires a service account key")
-    
+        raise exceptions.CromwellAuthenticationError(
+            "task_runtime requires a service account key"
+        )
+
     print_task_runtime_data(metadata, auth.service_key_content)
