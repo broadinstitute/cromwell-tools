@@ -1,6 +1,12 @@
 # This workflow triggers tests on PRs that targets master branch
 name: Tests on Pull Requests
-on: [pull_request]
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
 jobs:
   build:
     runs-on: ubuntu-latest
