@@ -5,8 +5,8 @@ Cromwell-tools
     :target: https://quay.io/repository/broadinstitute/cromwell-tools
     :alt: Container Build Status
     
-.. image:: https://github.com/broadinstitute/cromwell-tools/workflows/Tests%20on%20Pull%20Requests%20and%20Master/badge.svg?branch=master
-    :target: https://github.com/broadinstitute/cromwell-tools/actions?query=workflow%3A%22Tests+on+Pull+Requests+and+Master%22+branch%3Arex-switch-to-GithubActions
+.. image:: https://github.com/broadinstitute/cromwell-tools/workflows/Tests%20on%20Pull%20Requests%20and%20Master/badge.svg
+    :target: https://github.com/broadinstitute/cromwell-tools/actions?query=workflow%3A%22Tests+on+Pull+Requests+and+Master%22+branch%3Amaster
     :alt: Unit Test Status
 
 .. image:: https://img.shields.io/readthedocs/cromwell-tools/latest.svg?label=ReadtheDocs%3A%20Latest&logo=Read%20the%20Docs&style=flat-square
