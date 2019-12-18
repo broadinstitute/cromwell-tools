@@ -5,6 +5,9 @@ __pycache__/
 docker/cromwell-metadata/cromwell_credentials.txt
 docker/cromwell-metadata/caas_key.json
 
+# IDE
+.vscode/
+
 # Sphinx documentation
 docs/_build/
 

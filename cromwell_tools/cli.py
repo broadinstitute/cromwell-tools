@@ -4,15 +4,23 @@ from cromwell_tools.cromwell_api import CromwellAPI
 from cromwell_tools.cromwell_auth import CromwellAuth
 from cromwell_tools.diag import task_runtime
 from cromwell_tools import __version__
+import sys
 
 
 diagnostic_index = {'task_runtime': task_runtime.run}
 
 
+class DefaultHelpParser(argparse.ArgumentParser):
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % message)
+        self.print_help()
+        sys.exit(2)
+
+
 def parser(arguments=None):
     # TODO: dynamically walk through the commands and automatcally create parsers here
 
-    main_parser = argparse.ArgumentParser()
+    main_parser = DefaultHelpParser()
 
     # Check the installed version of Cromwell-tools
     main_parser.add_argument(
@@ -248,6 +256,10 @@ def parser(arguments=None):
 
     # group all of the arguments
     args = vars(main_parser.parse_args(arguments))
+
+    # Return help messages if no arguments provided
+    if not args['command']:
+        main_parser.error("No commands/arguments provided!")
 
     # TODO: see if this can be moved or if the commands can be populated from above
     if args['command'] in (

@@ -613,5 +613,5 @@ class CromwellAPI(object):
         if not response.ok:
             raise requests.exceptions.HTTPError(
                 'Error Code {0}: {1}'.format(response.status_code, response.text),
-                response=response
+                response=response,
             )
