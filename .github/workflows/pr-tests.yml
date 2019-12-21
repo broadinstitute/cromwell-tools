@@ -40,4 +40,14 @@ jobs:
 
     - name: Unit Tests
       run: |
-        python -m pytest --cov=cromwell_tools cromwell_tools/tests
+        python -m pytest --cov=cromwell_tools --cov-report=xml cromwell_tools/tests
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        flags: unittests
+        name: Cromwell-tools Test Coverage
+        yml: ./codecov.yml 
+        fail_ci_if_error: true
