@@ -10,7 +10,7 @@ try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
     # package is not installed
-    pass
+    __version__ = "Unknown Ver."
 
 # By using the below import statement when you call import cromwell_tools you get:
 # cromwell_tools.api.status
