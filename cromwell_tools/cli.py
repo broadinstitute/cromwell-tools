@@ -3,7 +3,7 @@ import requests
 from cromwell_tools.cromwell_api import CromwellAPI
 from cromwell_tools.cromwell_auth import CromwellAuth
 from cromwell_tools.diag import task_runtime
-from cromwell_tools import __version__
+from cromwell_tools import __version__ as cromwell_tools_version
 import sys
 
 
@@ -24,7 +24,10 @@ def parser(arguments=None):
 
     # Check the installed version of Cromwell-tools
     main_parser.add_argument(
-        '-V', '--version', action='version', version=f'%(prog)s {__version__}'
+        '-V',
+        '--version',
+        action='version',
+        version=f'%(prog)s {cromwell_tools_version}',
     )
 
     subparsers = main_parser.add_subparsers(help='sub-command help', dest='command')
