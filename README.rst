@@ -29,6 +29,10 @@ Cromwell-tools
     :target: https://github.com/ambv/black
     :alt: Code Style
 
+.. image:: https://codecov.io/gh/broadinstitute/cromwell-tools/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/broadinstitute/cromwell-tools
+    :alt: Code Coverage
+
 Overview
 ========
 
