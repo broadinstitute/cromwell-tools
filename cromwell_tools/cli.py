@@ -27,7 +27,7 @@ def parser(arguments=None):
         '-V',
         '--version',
         action='version',
-        version=f'%(prog)s {cromwell_tools_version}',
+        version='%(prog)s ' + cromwell_tools_version,
     )
 
     subparsers = main_parser.add_subparsers(help='sub-command help', dest='command')
@@ -286,7 +286,7 @@ def parser(arguments=None):
         try:
             command = diagnostic_index[args['command']]
         except KeyError:
-            raise KeyError(f"{args['command']} is not a valid command.")
+            raise KeyError("%s is not a valid command." % args['command'])
     del args['command']
     return command, args
 
