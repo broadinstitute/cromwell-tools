@@ -33,6 +33,10 @@ jobs:
           pip install -r requirements-test.txt -r requirements.txt
 
       - name: Lint Tests
+        # Black does not support Python3.5
+        # It will run on 3.6+, so we can
+        # safely disable it for 3.5 env
+        if: matrix.python-version != "3.5"
         run: |
           # Check Black code style compliance
           black ./ --skip-string-normalization --check
