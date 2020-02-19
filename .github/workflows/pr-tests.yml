@@ -38,6 +38,8 @@ jobs:
         # safely disable it for 3.5 env
         if: matrix.python-version != '3.5'
         run: |
+          # Install black only for Py3.6+
+          pip install black==19.10b0
           # Check Black code style compliance
           black ./ --skip-string-normalization --check
           # Check PEP-8 compliance
