@@ -13,40 +13,46 @@ jobs:
     strategy:
       max-parallel: 16
       matrix:
-        python-version: [ '3.6', '3.7' ]
-        os: [ ubuntu-latest, macos-latest ]
+        python-version: ["3.6", "3.7", "3.5"]
+        os: [ubuntu-latest, macos-latest]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Setup Python env
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: x64
+      - name: Setup Python env
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-test.txt -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-test.txt -r requirements.txt
 
-    - name: Lint Tests
-      run: |
-        # Check Black code style compliance
-        black ./ --skip-string-normalization --check
-        # Check PEP-8 compliance
-        flake8
+      - name: Lint Tests
+        # Black does not support Python3.5
+        # It will run on 3.6+, so we can
+        # safely disable it for 3.5 env
+        if: matrix.python-version != '3.5'
+        run: |
+          # Install black only for Py3.6+
+          pip install black==19.10b0
+          # Check Black code style compliance
+          black ./ --skip-string-normalization --check
+          # Check PEP-8 compliance
+          flake8
 
-    - name: Unit Tests
-      run: |
-        pytest --cov=cromwell_tools --cov-report=xml cromwell_tools/tests
+      - name: Unit Tests
+        run: |
+          pytest --cov=cromwell_tools --cov-report=xml cromwell_tools/tests
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: unittests
-        name: Cromwell-tools Test Coverage
-        fail_ci_if_error: false  # See https://github.com/codecov/codecov-action/issues/29
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: unittests
+          name: Cromwell-tools Test Coverage
+          fail_ci_if_error: false # See https://github.com/codecov/codecov-action/issues/29

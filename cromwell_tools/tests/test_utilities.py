@@ -450,11 +450,15 @@ class TestUtilities(unittest.TestCase):
         result_options = utils.compose_oauth_options_for_jes_backend_cromwell(
             test_auth, self.options_file_BytesIO
         )
-        result_options_in_dict = json.loads(result_options.getvalue())
+        # use .decode('utf-8') for Python3.5 compatibility
+        result_options_in_dict = json.loads(result_options.getvalue().decode('utf-8'))
 
         assert (
+            # use .decode('utf-8') for Python3.5 compatibility
             result_options_in_dict['read_from_cache']
-            == json.loads(self.options_file_BytesIO.getvalue())['read_from_cache']
+            == json.loads(self.options_file_BytesIO.getvalue().decode('utf-8'))[
+                'read_from_cache'
+            ]
         )
         assert (
             result_options_in_dict['google_project']
@@ -484,7 +488,8 @@ class TestUtilities(unittest.TestCase):
         )
 
         result_options = utils.compose_oauth_options_for_jes_backend_cromwell(test_auth)
-        result_options_in_dict = json.loads(result_options.getvalue())
+        # use .decode('utf-8') for Python3.5 compatibility
+        result_options_in_dict = json.loads(result_options.getvalue().decode('utf-8'))
 
         assert (
             result_options_in_dict['google_project']

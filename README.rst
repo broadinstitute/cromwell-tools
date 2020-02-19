@@ -21,8 +21,8 @@ Cromwell-tools
     :target: https://img.shields.io/github/license/broadinstitute/cromwell-tools.svg?style=flat-square
     :alt: License
 
-.. image:: https://img.shields.io/badge/python-3.6|3.7-green.svg?style=flat-square&logo=python&colorB=blue
-    :target: https://img.shields.io/badge/python-3.6|3.7-green.svg?style=flat-square&logo=python&colorB=blue
+.. image:: https://img.shields.io/badge/python-3.5|3.6|3.7-green.svg?style=flat-square&logo=python&colorB=blue
+    :target: https://img.shields.io/badge/python-3.5|3.6|3.7-green.svg?style=flat-square&logo=python&colorB=blue
     :alt: Language
 
 .. image:: https://img.shields.io/badge/Code%20Style-black-000000.svg?style=flat-square

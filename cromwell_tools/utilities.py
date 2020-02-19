@@ -245,7 +245,8 @@ def validate_cromwell_label(
     elif isinstance(label_object, bytes):
         label_object = json.loads(label_object.decode('utf-8'))
     elif isinstance(label_object, io.BytesIO):
-        label_object = json.loads(label_object.getvalue())
+        # use .decode('utf-8') for Python3.5 compatibility
+        label_object = json.loads(label_object.getvalue().decode('utf-8'))
 
     for label_key, label_value in label_object.items():
         err_msg += _content_checker(_CROMWELL_LABEL_KEY_REGEX, label_key)
@@ -399,7 +400,8 @@ def compose_oauth_options_for_jes_backend_cromwell(
         cromwell_options_file = io.BytesIO(json.dumps({}).encode())
 
     # using `getvalue()` here so we don't have to seek back to the beginning if we need the value again
-    options_json = json.loads(cromwell_options_file.getvalue())
+    # use .decode('utf-8') for Python3.5 compatibility
+    options_json = json.loads(cromwell_options_file.getvalue().decode('utf-8'))
     google_project = auth.service_key_content['project_id']
 
     options_json.update(
