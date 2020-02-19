@@ -135,13 +135,13 @@ class CromwellAPI(object):
         params = {'expandSubWorkflows': json.dumps(expandSubWorkflows)}
 
         if isinstance(excludeKey, str):
-            logger.info(f'Adding {excludeKey} to the request parameter list.')
+            logger.info('Adding %s to the request parameter list.' % excludeKey)
             params['excludeKey'] = [excludeKey]
         elif isinstance(excludeKey, list) and len(excludeKey) >= 1:
             params['excludeKey'] = excludeKey
 
         if isinstance(includeKey, str):
-            logger.info(f'Adding {includeKey} to the request parameter list.')
+            logger.info('Adding %s to the request parameter list.' % includeKey)
             params['includeKey'] = [includeKey]
         elif isinstance(includeKey, list) and len(includeKey) >= 1:
             params['includeKey'] = includeKey
@@ -319,7 +319,7 @@ class CromwellAPI(object):
         while True:
 
             if datetime.now() - start > timeout:
-                msg = f'Unfinished workflows after {timeout} minutes.'
+                msg = 'Unfinished workflows after %s minutes.' % timeout
                 raise Exception(msg.format(timeout))
 
             all_succeeded = True
@@ -332,11 +332,11 @@ class CromwellAPI(object):
                 status = cls._parse_workflow_status(response)
 
                 if verbose:
-                    print(f'Workflow {uuid} returned status {status}')
+                    print('Workflow %s returned status %s' % (uuid, status))
 
                 if status in _failed_statuses:
                     raise exceptions.WorkflowFailedError(
-                        f'Workflow {uuid} returned status {status}'
+                        'Workflow %s returned status %s' % (uuid, status)
                     )
                 elif status != 'Succeeded':
                     all_succeeded = False

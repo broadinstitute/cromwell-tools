@@ -188,7 +188,7 @@ def _content_checker(regex: str, content: str) -> str:
     matched = re.fullmatch(regex, content)
 
     if not matched:
-        return f'Invalid label: {content} does not match the regex {regex}.\n'
+        return 'Invalid label: %s does not match the regex %s.\n' % (content, regex)
     else:
         return ''
 
@@ -204,7 +204,11 @@ def _length_checker(length: int, content: str) -> str:
         A string of error message if validation fails, or an empty string if validation succeeds.
     """
     if len(content) > length:
-        return f'Invalid label: {content} has {len(content)} characters. The maximum is {length}.\n'
+        return 'Invalid label: %s has %s characters. The maximum is %s.\n' % (
+            content,
+            len(content),
+            length,
+        )
     else:
         return ''
 
@@ -401,7 +405,7 @@ def compose_oauth_options_for_jes_backend_cromwell(
     options_json.update(
         {
             'jes_gcs_root': execution_bucket
-            or f'gs://{google_project}-cromwell-execution/caas-cromwell-executions',
+            or 'gs://%s-cromwell-execution/caas-cromwell-executions' % google_project,
             'google_project': google_project,
             'user_service_account_json': json.dumps(auth.service_key_content),
             'google_compute_service_account': auth.service_key_content['client_email'],
