@@ -219,7 +219,8 @@ class CromwellAPI(object):
     def submit(
         cls: 'CromwellAPI',
         auth: CromwellAuth,
-        wdl_file: Union[str, io.BytesIO],
+        wdl_file: Union[str, io.BytesIO] = None,
+        wdl_url: str = None,
         inputs_files: Union[List[Union[str, io.BytesIO]], str, io.BytesIO] = None,
         options_file: Union[str, io.BytesIO] = None,
         dependencies: Union[str, List[str], io.BytesIO] = None,
@@ -261,6 +262,7 @@ class CromwellAPI(object):
         """
         submission_manifest = utilities.prepare_workflow_manifest(
             wdl_file=wdl_file,
+            wdl_url=wdl_url,
             inputs_files=inputs_files,
             options_file=options_file,
             dependencies=dependencies,

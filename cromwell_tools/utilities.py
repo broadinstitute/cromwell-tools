@@ -259,7 +259,8 @@ def validate_cromwell_label(
 
 
 def prepare_workflow_manifest(
-    wdl_file: Union[str, io.BytesIO],
+    wdl_file: Union[str, io.BytesIO] = None,
+    wdl_url: str = None,
     inputs_files: Union[List[Union[str, io.BytesIO]], str, io.BytesIO] = None,
     options_file: Union[str, io.BytesIO] = None,
     dependencies: Union[str, List[str], io.BytesIO] = None,
@@ -295,7 +296,12 @@ def prepare_workflow_manifest(
     workflow_manifest = {}
 
     # Compose WDL source file
-    workflow_manifest['workflowSource'] = _download_to_BytesIO_if_string(wdl_file)
+    if wdl_file:
+        workflow_manifest['workflowSource'] = _download_to_BytesIO_if_string(wdl_file)
+
+    # Compose WDL source URL
+    if wdl_url:
+        workflow_manifest['workflowUrl'] = wdl_url
 
     # Compose WDL inputs
     if inputs_files:
